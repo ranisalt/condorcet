@@ -114,6 +114,7 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
       reason: "not-submitted",
     });
     for (const locked of [neverSubmitted, acknowledgmentOnly]) {
+      expect(Object.keys(locked)).not.toContain("methods");
       expect(Object.keys(locked)).not.toContain("matrix");
       expect(Object.keys(locked)).not.toContain("winnerId");
       expect(Object.keys(locked)).not.toContain("blankCount");
@@ -125,6 +126,12 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
       throw new Error("Submitted blank voter should be eligible");
     expect(available.validCount).toBe(3);
     expect(available.blankCount).toBe(1);
+    // The 0↔87 tie is real; neither roster order nor ID 0 may break it.
+    expect(available).toHaveProperty("methods", {
+      copeland: { winnerIds: [0, 87], unresolved: false },
+      schulze: { winnerIds: [0, 87], unresolved: false },
+      rankedPairs: { winnerIds: [0, 87], unresolved: false },
+    });
     expect(JSON.stringify(available)).not.toContain("voter-");
     expect(JSON.stringify(available)).not.toContain("valid-a");
 
@@ -133,6 +140,7 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     const relocked = await readResults(d1, election, "blank");
     expect(relocked).toEqual({ state: "locked", validCount: 1, threshold: 2, reason: "threshold" });
     expect(Object.keys(relocked)).not.toContain("matrix");
+    expect(Object.keys(relocked)).not.toContain("methods");
     expect(Object.keys(relocked)).not.toContain("winnerId");
     expect(Object.keys(relocked)).not.toContain("blankCount");
 
@@ -217,6 +225,16 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
         130: { 0: 2, 87: 1, 130: 0 },
       },
       winnerId: null,
+    });
+    const cycleResult = await readResults(d1, cycleElection, "cycle-a");
+    expect(cycleResult).toMatchObject({
+      state: "available",
+      winnerId: null,
+      methods: {
+        copeland: { winnerIds: [0, 87, 130], unresolved: false },
+        schulze: { winnerIds: [0, 87, 130], unresolved: false },
+        rankedPairs: { winnerIds: [0, 87, 130], unresolved: false },
+      },
     });
   } finally {
     await dispose();
