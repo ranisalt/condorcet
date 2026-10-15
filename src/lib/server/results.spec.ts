@@ -1,0 +1,274 @@
+import { expect, it } from "vitest";
+import type { Election } from "../election.ts";
+import { summarizeCondorcet } from "../condorcet.ts";
+import { acknowledgeElection, readElectionCounts, replaceBallot } from "./ballots.ts";
+import { getDb } from "./db/index.ts";
+import { user } from "./db/auth.schema.ts";
+import { openTestD1 } from "../../test/d1.ts";
+import { readPairwiseCounts, readResults } from "./results.ts";
+
+const at = new Date("2026-10-15T12:00:00.000Z");
+const election: Election = {
+  id: "8bc131c5-3228-46e4-b310-3555653d815d",
+  titleKey: "election_br_2026_title",
+  closesAt: null,
+  resultsThreshold: 2,
+  sources: ["https://example.invalid/source"],
+  candidates: [
+    {
+      id: 0,
+      name: "Candidate 0",
+      number: "10",
+      party: "TEST",
+      vice: { name: "Vice 0", party: "TEST" },
+    },
+    {
+      id: 87,
+      name: "Candidate 87",
+      number: "20",
+      party: "TEST",
+      vice: { name: "Vice 87", party: "TEST" },
+    },
+    {
+      id: 130,
+      name: "Candidate 130",
+      number: "30",
+      party: "TEST",
+      vice: { name: "Vice 130", party: "TEST" },
+    },
+  ],
+};
+
+async function seedUser(d1: D1Database, id: string) {
+  await getDb(d1)
+    .insert(user)
+    .values({
+      id,
+      name: `User ${id}`,
+      email: `${id}@example.invalid`,
+      emailVerified: false,
+      createdAt: at,
+      updatedAt: at,
+    });
+}
+
+async function acknowledge(d1: D1Database, userId: string) {
+  await seedUser(d1, userId);
+  await acknowledgeElection(d1, election.id, userId, at);
+}
+
+it("aggregates omitted-last pairwise preferences inside D1 and isolates elections", async () => {
+  const { d1, dispose } = await openTestD1();
+  try {
+    await acknowledge(d1, "voter-a");
+    await acknowledge(d1, "voter-b");
+    await acknowledge(d1, "voter-c");
+    await acknowledge(d1, "voter-blank");
+    await acknowledgeElection(d1, "other-election", "voter-a", at);
+    await replaceBallot(d1, election.id, "voter-a", [0, 87], at);
+    await replaceBallot(d1, election.id, "voter-b", [130], at);
+    await replaceBallot(d1, election.id, "voter-c", [87, 0, 130], at);
+    await replaceBallot(d1, election.id, "voter-blank", [], at);
+    await replaceBallot(d1, "other-election", "voter-a", [130, 0], at);
+
+    const pairs = await readPairwiseCounts(d1, election);
+    expect(summarizeCondorcet([0, 87, 130], pairs)).toEqual({
+      matrix: {
+        0: { 0: 0, 87: 1, 130: 2 },
+        87: { 0: 1, 87: 0, 130: 2 },
+        130: { 0: 1, 87: 1, 130: 0 },
+      },
+      winnerId: null,
+    });
+    expect(pairs).toHaveLength(6);
+  } finally {
+    await dispose();
+  }
+});
+
+it("only exposes aggregates to submitted voters while the nonempty threshold holds", async () => {
+  const { d1, dispose } = await openTestD1();
+  try {
+    for (const userId of ["never", "ack-only", "blank", "valid-a", "valid-b"]) {
+      await acknowledge(d1, userId);
+    }
+    await replaceBallot(d1, election.id, "valid-a", [0, 87, 130], at);
+    await replaceBallot(d1, election.id, "valid-b", [87, 0], at);
+    await acknowledge(d1, "valid-c");
+    await replaceBallot(d1, election.id, "valid-c", [130], at);
+    await replaceBallot(d1, election.id, "blank", [], at);
+
+    expect(await readElectionCounts(d1, election.id)).toEqual({ validCount: 3, blankCount: 1 });
+    const neverSubmitted = await readResults(d1, election, "never");
+    const acknowledgmentOnly = await readResults(d1, election, "ack-only");
+    expect(neverSubmitted).toEqual({
+      state: "locked",
+      validCount: 3,
+      threshold: 2,
+      reason: "not-submitted",
+    });
+    expect(acknowledgmentOnly).toEqual({
+      state: "locked",
+      validCount: 3,
+      threshold: 2,
+      reason: "not-submitted",
+    });
+    for (const locked of [neverSubmitted, acknowledgmentOnly]) {
+      expect(Object.keys(locked)).not.toContain("matrix");
+      expect(Object.keys(locked)).not.toContain("winnerId");
+      expect(Object.keys(locked)).not.toContain("blankCount");
+    }
+
+    const available = await readResults(d1, election, "blank");
+    expect(available.state).toBe("available");
+    if (available.state !== "available")
+      throw new Error("Submitted blank voter should be eligible");
+    expect(available.validCount).toBe(3);
+    expect(available.blankCount).toBe(1);
+    expect(JSON.stringify(available)).not.toContain("voter-");
+    expect(JSON.stringify(available)).not.toContain("valid-a");
+
+    await replaceBallot(d1, election.id, "valid-c", [], new Date("2026-10-16T12:00:00.000Z"));
+    await replaceBallot(d1, election.id, "valid-b", [], new Date("2026-10-16T12:00:00.000Z"));
+    const relocked = await readResults(d1, election, "blank");
+    expect(relocked).toEqual({ state: "locked", validCount: 1, threshold: 2, reason: "threshold" });
+    expect(Object.keys(relocked)).not.toContain("matrix");
+    expect(Object.keys(relocked)).not.toContain("winnerId");
+    expect(Object.keys(relocked)).not.toContain("blankCount");
+
+    await replaceBallot(d1, election.id, "valid-c", [130], new Date("2026-10-17T12:00:00.000Z"));
+    const unlockedAgain = await readResults(d1, election, "blank");
+    expect(unlockedAgain.state).toBe("available");
+    expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, election)).matrix).toEqual(
+      unlockedAgain.state === "available" ? unlockedAgain.matrix : {},
+    );
+
+    const boundaryElection = { ...election, id: "boundary-election" };
+    await seedUser(d1, "boundary-valid");
+    await seedUser(d1, "boundary-blank");
+    await seedUser(d1, "boundary-never");
+    await acknowledgeElection(d1, boundaryElection.id, "boundary-valid", at);
+    await acknowledgeElection(d1, boundaryElection.id, "boundary-blank", at);
+    await replaceBallot(d1, boundaryElection.id, "boundary-valid", [0], at);
+    await replaceBallot(d1, boundaryElection.id, "boundary-blank", [], at);
+    expect(await readElectionCounts(d1, boundaryElection.id)).toEqual({
+      validCount: 1,
+      blankCount: 1,
+    });
+    expect(await readResults(d1, boundaryElection, "boundary-blank")).toEqual({
+      state: "locked",
+      validCount: 1,
+      threshold: 2,
+      reason: "threshold",
+    });
+    expect(await readResults(d1, boundaryElection, "boundary-never")).toEqual({
+      state: "locked",
+      validCount: 1,
+      threshold: 2,
+      reason: "not-submitted",
+    });
+  } finally {
+    await dispose();
+  }
+});
+
+it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles", async () => {
+  const { d1, dispose } = await openTestD1();
+  try {
+    const emptyPairs = await readPairwiseCounts(d1, election);
+    expect(emptyPairs).toEqual([]);
+    expect(summarizeCondorcet([0, 87, 130], emptyPairs)).toEqual({
+      matrix: {
+        0: { 0: 0, 87: 0, 130: 0 },
+        87: { 0: 0, 87: 0, 130: 0 },
+        130: { 0: 0, 87: 0, 130: 0 },
+      },
+      winnerId: null,
+    });
+
+    const sparseElection = { ...election, id: "sparse-election" };
+    await seedUser(d1, "sparse-voter");
+    await acknowledgeElection(d1, sparseElection.id, "sparse-voter", at);
+    await replaceBallot(d1, sparseElection.id, "sparse-voter", [0], at);
+    expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, sparseElection))).toEqual({
+      matrix: {
+        0: { 0: 0, 87: 1, 130: 1 },
+        87: { 0: 0, 87: 0, 130: 0 },
+        130: { 0: 0, 87: 0, 130: 0 },
+      },
+      winnerId: 0,
+    });
+
+    const cycleElection = { ...election, id: "cycle-election" };
+    const cycleBallots = [
+      { userId: "cycle-a", ranking: [0, 87, 130] },
+      { userId: "cycle-b", ranking: [87, 130, 0] },
+      { userId: "cycle-c", ranking: [130, 0, 87] },
+    ];
+    for (const ballot of cycleBallots) {
+      await seedUser(d1, ballot.userId);
+      await acknowledgeElection(d1, cycleElection.id, ballot.userId, at);
+      await replaceBallot(d1, cycleElection.id, ballot.userId, ballot.ranking, at);
+    }
+    expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, cycleElection))).toEqual({
+      matrix: {
+        0: { 0: 0, 87: 2, 130: 1 },
+        87: { 0: 1, 87: 0, 130: 2 },
+        130: { 0: 2, 87: 1, 130: 0 },
+      },
+      winnerId: null,
+    });
+  } finally {
+    await dispose();
+  }
+});
+
+it.each(["withdrawal", "eligibility loss"] as const)(
+  "rechecks the aggregate snapshot after %s between the precheck and transaction",
+  async (change) => {
+    const { d1, dispose } = await openTestD1();
+    try {
+      for (const userId of ["snapshot-a", "snapshot-b", "snapshot-blank"]) {
+        await acknowledge(d1, userId);
+      }
+      await replaceBallot(d1, election.id, "snapshot-a", [0], at);
+      await replaceBallot(d1, election.id, "snapshot-b", [87], at);
+      await replaceBallot(d1, election.id, "snapshot-blank", [], at);
+      expect(await readResults(d1, election, null)).toEqual({
+        state: "locked",
+        validCount: 2,
+        threshold: 2,
+        reason: "not-submitted",
+      });
+
+      let changed = false;
+      const interceptedD1 = new Proxy(d1, {
+        get(target, key) {
+          if (key !== "batch") return Reflect.get(target, key, target);
+          return async <T>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]> => {
+            // Write through the original binding before the real snapshot transaction.
+            if (change === "withdrawal") {
+              await replaceBallot(d1, election.id, "snapshot-b", [], at);
+            } else {
+              await d1
+                .prepare("DELETE FROM election_participant WHERE election_id = ? AND user_id = ?")
+                .bind(election.id, "snapshot-blank")
+                .run();
+            }
+            changed = true;
+            return target.batch<T>(statements);
+          };
+        },
+      });
+      expect(await readResults(interceptedD1, election, "snapshot-blank")).toEqual({
+        state: "locked",
+        validCount: change === "withdrawal" ? 1 : 2,
+        threshold: 2,
+        reason: change === "withdrawal" ? "threshold" : "not-submitted",
+      });
+      expect(changed).toBe(true);
+    } finally {
+      await dispose();
+    }
+  },
+);
