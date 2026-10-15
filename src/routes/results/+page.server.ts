@@ -5,7 +5,7 @@ import { currentElection } from "#lib/server/election.ts";
 import { readResults } from "#lib/server/results.ts";
 import type { PageServerLoad } from "./$types";
 
-export const load = (async ({ locals }) => {
+export const load = (async ({ locals, url }) => {
   const election = currentElection;
   if (election === null) error(404, m.no_election());
 
@@ -17,6 +17,12 @@ export const load = (async ({ locals }) => {
   }
 
   return {
+    method:
+      url.searchParams.get("method") === "schulze"
+        ? ("schulze" as const)
+        : url.searchParams.get("method") === "rankedPairs"
+          ? ("rankedPairs" as const)
+          : ("copeland" as const),
     view: {
       ...view,
       election: {

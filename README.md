@@ -62,7 +62,17 @@ Fresh checkouts normally apply committed migrations, not generate new ones. Do n
 
 Only **current nonempty ballots** count toward participation, thresholds, and percentage denominators. Blank statistics reflect current empty submissions, not cumulative save events. Repeated saves do not create extra voters.
 
-Public progress contains valid participation and the configured threshold. Every results request requires prior submission and enough nonempty ballots. Withdrawal can relock results; information already viewed cannot be revoked. Results show directional pairwise counts/percentages and a strict Condorcet winner only if a ticket beats every opponent; ties/cycles produce no winner, not a fallback method or full ranking. Opposing percentages can sum below 100% because omitted tickets tie. Results refresh on navigation/reload, without polling.
+Public progress contains valid participation and the configured threshold. Every results request requires prior submission and enough nonempty ballots. Withdrawal can relock results; information already viewed cannot be revoked. All methods use the same server-authorized aggregate snapshot; locked responses omit method outcomes, candidate statistics, the matrix, and blank counts. Results refresh on navigation/reload, without polling.
+
+## Result methods
+
+The strict Condorcet status identifies a winner only if a ticket beats every opponent. A tie or cycle can leave that status without a winner. A separate selector compares:
+
+- **Copeland:** pairwise wins minus losses, with zero for tied contests. All candidates with the maximum score share the result.
+- **Schulze / Beatpath:** winning-votes variant. Path strength is its weakest link; compare each candidate's strongest paths against the reverse paths. All unbeaten candidates share the result.
+- **Ranked Pairs / Tideman:** lock victories by descending margin, then winning votes, rejecting edges that form a cycle. Exactly tied strengths consider every possible locking order, preserving all possible winners rather than choosing by candidate ID or roster order. Exploration is bounded for Worker safety; if it cannot finish, the UI explicitly reports an undetermined result instead of presenting a partial or arbitrary winner set.
+
+The matrix shows signed margins: row-over-column votes minus column-over-row votes. Positive values favor the row, negative values favor the column, zero is a tie, and the diagonal is not a contest. Omitted candidates tie with one another. Blank ballots do not enter any calculation. Method selection uses ordinary links and also works without JavaScript.
 
 ## Validation
 

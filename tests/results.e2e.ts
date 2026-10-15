@@ -7,6 +7,7 @@ const electionId = "8bc131c5-3228-46e4-b310-3555653d815d";
 test("reveals results only at the valid-ballot threshold and relocks after withdrawal", async ({
   page,
   context,
+  browser,
 }) => {
   test.setTimeout(180_000);
   await resetFixture({ validCount: 9999, blankCount: 1 });
@@ -25,6 +26,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   expect(lockedPayload).not.toContain('"matrix"');
   expect(lockedPayload).not.toContain('"winnerId"');
   expect(lockedPayload).not.toContain('"blankCount"');
+  expect(lockedPayload).not.toContain('"methods"');
   expect(lockedPayload).not.toContain("Lula");
 
   await signInFixture(context, "test-voter");
@@ -52,6 +54,49 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   await expect(page.getByRole("columnheader", { name: /Lula/ })).toBeVisible();
   await expect(page.getByRole("cell", { name: /10\.000/ }).first()).toBeVisible();
 
+  for (const method of ["Schulze / Beatpath", "Ranked Pairs / Tideman", "Copeland"]) {
+    await page.getByRole("link", { name: method, exact: true }).click();
+    await expect(page.getByRole("link", { name: method, exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(page.getByRole("region", { name: `Resultado por ${method}` })).toBeVisible();
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  const matrixRegion = page.getByRole("region", {
+    name: "Comparações entre candidaturas",
+    exact: true,
+  });
+  await expect(matrixRegion).toHaveAttribute("tabindex", "0");
+  expect(await matrixRegion.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(
+    true,
+  );
+
+  const nativeContext = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    await signInFixture(nativeContext, "test-voter");
+    const nativePage = await nativeContext.newPage();
+    await nativePage.goto("http://localhost:4173/results?method=schulze");
+    await expect(
+      nativePage.getByRole("link", { name: "Schulze / Beatpath", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await nativePage.getByRole("link", { name: "Ranked Pairs / Tideman", exact: true }).click();
+    await expect(
+      nativePage.getByRole("region", { name: "Resultado por Ranked Pairs / Tideman" }),
+    ).toBeVisible();
+    await nativePage.goto("http://localhost:4173/results?method=invalid");
+    await expect(nativePage.getByRole("link", { name: "Copeland", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  } finally {
+    await nativeContext.close();
+  }
+
   await signInFixture(context, "test-other");
   await page.goto("/ballot");
   await page.getByRole("button", { name: "Remover Escritor Augusto Cury" }).click();
@@ -65,6 +110,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   const relockedPayload = await (await page.request.get("/results/__data.json")).text();
   expect(relockedPayload).not.toContain('"matrix"');
   expect(relockedPayload).not.toContain('"blankCount"');
+  expect(relockedPayload).not.toContain('"methods"');
 
   const database = await openE2ED1();
   try {
