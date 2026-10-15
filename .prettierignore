@@ -8,3 +8,17 @@ bun.lockb
 # Miscellaneous
 /static/
 /drizzle/
+
+# Local/generated files are not authored application source
+.hermes/
+.superpowers/
+.worktrees/
+.wrangler/
+.svelte-kit/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+worker-configuration.d.ts
+src/lib/paraglide/
+project.inlang/cache/

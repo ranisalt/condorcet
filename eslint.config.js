@@ -21,6 +21,9 @@ export default defineConfig(
       // typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
       // see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
       "no-undef": "off",
+      eqeqeq: ["error", "always"],
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/consistent-type-imports": "error",
     },
   },
   {
@@ -34,8 +37,10 @@ export default defineConfig(
     },
   },
   {
-    // Override or add rule settings here, such as:
-    // 'svelte/button-has-type': 'error'
-    rules: {},
+    files: ["**/*.svelte"],
+    rules: {
+      "svelte/button-has-type": "error",
+      "svelte/no-at-html-tags": "error",
+    },
   },
 );
