@@ -130,3 +130,33 @@ it("makes add/remove idempotent and treats boundary moves as no-ops", () => {
   expect(editDraft(draft, { type: "down", candidateId: 130 })).toEqual(draft);
   expect(draft.ranked).toEqual([0, 87]);
 });
+
+it("reorders down, ignores edits for IDs outside the candidate order, and keeps arrays isolated", () => {
+  const original = { ranked: [0, 87], order: [0, 87, 130] };
+  const moved = editDraft(original, { type: "down", candidateId: 0 });
+  expect(moved).toEqual({ ranked: [87, 0], order: [0, 87, 130] });
+  expect(editDraft(moved, { type: "add", candidateId: 255 })).toEqual(moved);
+  expect(editDraft(moved, { type: "down", candidateId: 130 })).toEqual(moved);
+  expect(moved.ranked).toEqual([87, 0]);
+  expect(original.ranked).toEqual([0, 87]);
+  expect(original.order).toEqual([0, 87, 130]);
+});
+
+it("rejects duplicate candidate IDs at the ballot parsing boundary", () => {
+  const duplicateCandidates = [candidates[0], candidates[0]];
+  expect(() => parseRankedIds([], duplicateCandidates)).toThrow(/duplicate candidate IDs/);
+  expect(() => parseDraftEdit("add:0", duplicateCandidates)).toThrow(/duplicate candidate IDs/);
+});
+
+it("handles empty and singleton shuffles without sampling and validates random bounds", () => {
+  const random = () => {
+    throw new Error("random should not be sampled for fewer than two values");
+  };
+  expect(shuffle([], random)).toEqual([]);
+  expect(shuffle([87], random)).toEqual([87]);
+  expect(shuffle([0, 87, 130], () => 0.999999)).toEqual([0, 87, 130]);
+
+  for (const sample of [-0.01, 1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+    expect(() => shuffle([0, 87], () => sample)).toThrow(RangeError);
+  }
+});

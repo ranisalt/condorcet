@@ -40,3 +40,31 @@ it("does not manufacture a winner for a cycle or pairwise tie", () => {
   expect(summarizeCondorcet([0, 87, 130], []).winnerId).toBeNull();
   expect(summarizeCondorcet([], []).winnerId).toBeNull();
 });
+
+it("rejects duplicate candidate IDs and invalid pair references", () => {
+  expect(() => summarizeCondorcet([0, 0], [])).toThrow(/unique/);
+  for (const pair of [
+    { preferredId: 999, otherId: 87, votes: 1 },
+    { preferredId: 0, otherId: 999, votes: 1 },
+    { preferredId: 87, otherId: 87, votes: 1 },
+  ]) {
+    expect(() => summarizeCondorcet([0, 87], [pair])).toThrow(/invalid candidate pair/);
+  }
+});
+
+it("requires every pairwise vote count to be a nonnegative integer", () => {
+  for (const votes of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    expect(() => summarizeCondorcet([0, 87], [{ preferredId: 0, otherId: 87, votes }])).toThrow(
+      /nonnegative integer/,
+    );
+  }
+});
+
+it("builds a complete zeroed matrix and recognizes a sole candidate", () => {
+  expect(summarizeCondorcet([87], []).matrix).toEqual({ 87: { 87: 0 } });
+  expect(summarizeCondorcet([87], []).winnerId).toBe(87);
+  expect(summarizeCondorcet([0, 87], []).matrix).toEqual({
+    0: { 0: 0, 87: 0 },
+    87: { 0: 0, 87: 0 },
+  });
+});
