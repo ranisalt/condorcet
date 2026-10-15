@@ -46,6 +46,7 @@ const requiredKeys = [
   "thanks_saved",
   "thanks_blank",
   "edit_vote",
+  "view_ballot",
   "results_title",
   "results_not_submitted",
   "results_below_threshold",

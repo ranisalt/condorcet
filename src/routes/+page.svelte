@@ -34,7 +34,12 @@
 
       <div class="home-actions">
         {#if data.election && data.signedIn}
-          <a class="button button--primary" href={resolve("acknowledgment")}>{m.start_ballot()}</a>
+          {#if data.open}
+            <a class="button button--primary" href={resolve("acknowledgment")}>{m.start_ballot()}</a
+            >
+          {:else}
+            <a class="button button--primary" href={resolve("ballot")}>{m.view_ballot()}</a>
+          {/if}
           <form method="POST" action="?/logout">
             <button type="submit" class="button">{m.sign_out()}</button>
           </form>

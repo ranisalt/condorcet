@@ -44,6 +44,7 @@
   "thanks_saved": "Seu voto foi salvo. Você pode voltar com a mesma conta para consultar ou alterar suas preferências enquanto a simulação estiver aberta.",
   "thanks_blank": "Seu voto em branco foi registrado. Ele não entra nos cálculos, mas você poderá consultar os resultados quando houver votos válidos suficientes.",
   "edit_vote": "Consultar ou alterar meu voto",
+  "view_ballot": "Consultar minha cédula",
   "results_title": "Resultados da simulação",
   "results_not_submitted": "Envie seu voto para consultar os resultados quando o mínimo de votos válidos for alcançado. Um envio em branco também permite a consulta, mas não conta para esse mínimo.",
   "results_below_threshold": "Ainda não há votos válidos suficientes para mostrar os resultados.",

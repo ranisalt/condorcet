@@ -41,6 +41,7 @@
     <h2 id="condorcet-heading">{winner.name}</h2>
     <p>{m.results_strict_winner_description()}</p>
     <small>{winner.number} · {winner.party}</small>
+    <small>{m.vice_label({ name: winner.vice.name, party: winner.vice.party })}</small>
   {:else}
     <h2 id="condorcet-heading">{m.results_no_strict_winner()}</h2>
     <p>{m.no_condorcet_winner()}</p>
@@ -71,12 +72,20 @@
         {#each methodWinners as candidate (candidate.id)}
           <li>
             <strong>{candidate.name}</strong><small>{candidate.number} · {candidate.party}</small>
+            <small>{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small
+            >
           </li>
         {/each}
       </ul>
     {:else if methodWinners[0]}
       <h3>{methodWinners[0].name}</h3>
       <small>{methodWinners[0].number} · {methodWinners[0].party}</small>
+      <small
+        >{m.vice_label({
+          name: methodWinners[0].vice.name,
+          party: methodWinners[0].vice.party,
+        })}</small
+      >
     {/if}
     <p>{methods[method].description()}</p>
   </section>
@@ -97,17 +106,24 @@
         <tr>
           <th scope="col">{m.pairwise_row_label()}</th>
           {#each view.election.candidates as candidate (candidate.id)}
-            <th scope="col"
-              ><span>{candidate.name}</span><small>{candidate.number} · {candidate.party}</small
-              ></th
-            >
+            <th scope="col">
+              <span>{candidate.name}</span><small>{candidate.number} · {candidate.party}</small>
+              <small
+                >{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small
+              >
+            </th>
           {/each}
         </tr>
       </thead>
       <tbody>
         {#each view.election.candidates as candidate (candidate.id)}
           <tr>
-            <th scope="row">{candidate.name}</th>
+            <th scope="row">
+              {candidate.name}
+              <small
+                >{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small
+              >
+            </th>
             {#each view.election.candidates as opponent (opponent.id)}
               {@const margin =
                 (view.matrix[candidate.id]?.[opponent.id] ?? 0) -

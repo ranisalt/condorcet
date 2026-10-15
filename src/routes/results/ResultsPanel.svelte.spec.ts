@@ -43,6 +43,9 @@ it("separates strict Condorcet status from tied method outcomes and renders sign
   await expect.element(outcome.getByText("Empate entre candidaturas")).toBeVisible();
   for (const id of [0, 87, 130]) {
     await expect.element(outcome.getByText(`Candidatura ${id}`, { exact: true })).toBeVisible();
+    await expect
+      .element(outcome.getByText(`Vice: Vice ${id} (TESTE)`, { exact: true }))
+      .toBeVisible();
   }
   await expect
     .element(page.getByRole("link", { name: "Copeland", exact: true }))
@@ -59,6 +62,7 @@ it("shows the selected method winner without claiming a strict Condorcet winner"
   await render(ResultsPanel, { props: { view, method: "schulze" } });
   const outcome = page.getByRole("region", { name: "Resultado por Schulze / Beatpath" });
   await expect.element(outcome.getByText("Candidatura 130", { exact: true })).toBeVisible();
+  await expect.element(outcome.getByText("Vice: Vice 130 (TESTE)", { exact: true })).toBeVisible();
   await expect.element(outcome.getByText("Candidatura 0", { exact: true })).not.toBeInTheDocument();
   await expect
     .element(page.getByRole("heading", { name: "Não há vencedor de Condorcet" }))
@@ -92,6 +96,27 @@ it("recognizes candidate ID zero as a strict winner and displays pairwise ties",
   });
   await expect
     .element(page.getByRole("heading", { name: "Candidatura 0", exact: true, level: 2 }))
+    .toBeVisible();
+  await expect
+    .element(
+      page
+        .getByRole("region", { name: "Candidatura 0", exact: true })
+        .getByText("Vice: Vice 0 (TESTE)", { exact: true }),
+    )
+    .toBeVisible();
+  const table = page.getByRole("table", { name: "Comparações entre candidaturas" });
+  await expect
+    .element(
+      table.getByRole("columnheader", {
+        name: "Candidatura 0 0 · TESTE Vice: Vice 0 (TESTE)",
+        exact: true,
+      }),
+    )
+    .toBeVisible();
+  await expect
+    .element(
+      table.getByRole("rowheader", { name: "Candidatura 0 Vice: Vice 0 (TESTE)", exact: true }),
+    )
     .toBeVisible();
   await expect
     .element(page.getByRole("table").getByRole("cell", { name: "0", exact: true }).first())

@@ -24,6 +24,19 @@ it("does not label a closed election as ongoing", async () => {
   await expect.element(page.getByText("Em andamento", { exact: true })).not.toBeInTheDocument();
 });
 
+it("offers consultation rather than a new vote when a signed-in election is closed", async () => {
+  await render(HomePage, {
+    props: { data: { ...data, open: false, signedIn: true }, form: null, params: {} },
+  });
+  await expect
+    .element(page.getByRole("link", { name: "Preparar meu voto" }))
+    .not.toBeInTheDocument();
+  await expect
+    .element(page.getByRole("link", { name: "Consultar minha cédula" }))
+    .toHaveAttribute("href", "/ballot");
+  await expect.element(page.getByRole("button", { name: "Sair", exact: true })).toBeVisible();
+});
+
 it("shows real participation progress and the ranked-preference illustration", async () => {
   await render(HomePage, { props: { data, form: null, params: {} } });
 
