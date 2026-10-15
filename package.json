@@ -13,14 +13,14 @@
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
     "test:unit": "vitest",
-    "test": "npm run test:unit -- --run && npm run test:e2e",
-    "test:e2e": "playwright install && playwright test",
+    "test": "pnpm run test:unit --run && pnpm run test:e2e",
+    "test:e2e": "playwright test",
     "gen": "wrangler types",
-    "db:push": "drizzle-kit push",
+    "db:push": "wrangler d1 migrations apply DB --local",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "wrangler d1 migrations apply DB --local",
     "db:studio": "drizzle-kit studio",
-    "auth:schema": "auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
+    "auth:schema": "auth generate --config auth.schema.config.ts --adapter drizzle --dialect sqlite --output src/lib/server/db/auth.schema.ts --yes"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -32,6 +32,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.5",
     "@vitest/browser-playwright": "^5.0.4",
+    "@vitest/coverage-v8": "5.0.4",
     "auth": "^1.7.8",
     "better-auth": "^1.7.8",
     "drizzle-kit": "^0.31.11",

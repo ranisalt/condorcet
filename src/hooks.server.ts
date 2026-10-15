@@ -1,5 +1,13 @@
 import { building } from "$app/env";
+import {
+  ORIGIN,
+  BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+} from "$app/env/private";
+import { env } from "cloudflare:workers";
 import { createAuth } from "#lib/server/auth.ts";
+import { privateResponse } from "#lib/server/private-response.ts";
 import { svelteKitHandler } from "better-auth/svelte-kit";
 import { type Handle, sequence } from "@sveltejs/kit/hooks";
 import { getTextDirection } from "#lib/paraglide/runtime.js";
@@ -19,12 +27,16 @@ const handleParaglide: Handle = ({ event, resolve }) =>
   });
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
-  if (!event.platform?.env?.DB)
-    throw new Error('D1 binding "DB" not found - are you running with wrangler?');
+  if (building) return resolve(event);
 
-  event.locals.auth = createAuth(event.platform.env.DB);
+  const auth = createAuth(env.DB, {
+    origin: ORIGIN,
+    secret: BETTER_AUTH_SECRET,
+    googleClientId: GOOGLE_CLIENT_ID,
+    googleClientSecret: GOOGLE_CLIENT_SECRET,
+  });
+  event.locals.auth = auth;
 
-  const { auth } = event.locals;
   const session = await auth.api.getSession({ headers: event.request.headers });
 
   if (session) {
@@ -35,4 +47,9 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
   return svelteKitHandler({ event, resolve, auth, building });
 };
 
-export const handle: Handle = sequence(handleParaglide, handleBetterAuth);
+const handlePrivateResponse: Handle = async ({ event, resolve }) => {
+  const response = await resolve(event);
+  return building ? response : privateResponse(response);
+};
+
+export const handle: Handle = sequence(handlePrivateResponse, handleParaglide, handleBetterAuth);
