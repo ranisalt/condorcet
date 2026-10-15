@@ -6,7 +6,7 @@
   <title>{m.method_title()} · {m.app_title()}</title>
 </svelte:head>
 
-<article>
+<article class="education-page">
   <h1>{m.method_title()}</h1>
   <p>{m.simulation_warning()}</p>
   <p>{m.method_intro()}</p>
@@ -41,7 +41,27 @@
     <p>{m.method_limits_body()}</p>
   </section>
 
-  <section>
+  <section id="comparison-methods" class="method-grid" aria-label={m.method_title()}>
+    <div class="method-card">
+      <h2>{m.education_copeland_title()}</h2>
+      <p>{m.education_copeland_body()}</p>
+    </div>
+    <div class="method-card">
+      <h2>{m.education_schulze_title()}</h2>
+      <p>{m.education_schulze_body()}</p>
+    </div>
+    <div class="method-card">
+      <h2>{m.education_ranked_pairs_title()}</h2>
+      <p>{m.education_ranked_pairs_body()}</p>
+    </div>
+  </section>
+
+  <section class="method-limit-note">
+    <h2>{m.education_method_ties_title()}</h2>
+    <p>{m.education_method_ties_body()}</p>
+  </section>
+
+  <section class="source-list">
     <h2>{m.method_sources()}</h2>
     <ul>
       <li>

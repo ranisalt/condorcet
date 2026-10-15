@@ -9,18 +9,36 @@
   <title>{m.ack_title()} · {m.app_title()}</title>
 </svelte:head>
 
-<h1>{m.ack_title()}</h1>
-<p>{m.simulation_warning()}</p>
-<p>{m.privacy_warning()}</p>
-<p>{m.login_explanation()}</p>
-<form method="POST">
-  <input type="hidden" name="electionId" value={data.election.id} />
-  <label>
-    <input type="checkbox" name="acknowledged" value="yes" required />
-    {m.ack_label()}
-  </label>
-  {#if form?.required || form?.invalid}
-    <p role="alert">{m.ack_required()}</p>
-  {/if}
-  <button type="submit">{m.ack_continue()}</button>
-</form>
+<div class="acknowledgment-page">
+  <header class="page-heading">
+    <p class="eyebrow">{m[data.election.titleKey]()}</p>
+    <h1>{m.ack_title()}</h1>
+  </header>
+
+  <section class="acknowledgment-card" aria-labelledby="ack-study-heading">
+    <h2 id="ack-study-heading">{m.study_notice_title()}</h2>
+    <p>{m.simulation_warning()}</p>
+  </section>
+
+  <section
+    class="acknowledgment-card acknowledgment-card--privacy"
+    aria-labelledby="ack-privacy-heading"
+  >
+    <h2 id="ack-privacy-heading">{m.privacy_heading()}</h2>
+    <p>{m.privacy_warning()}</p>
+    <p>{m.privacy_obfuscation()}</p>
+    <p>{m.login_explanation()}</p>
+  </section>
+
+  <form class="acknowledgment-form" method="POST">
+    <input type="hidden" name="electionId" value={data.election.id} />
+    <label>
+      <input type="checkbox" name="acknowledged" value="yes" required />
+      <span>{m.ack_label()}</span>
+    </label>
+    {#if form?.required || form?.invalid}
+      <p class="form-error" role="alert">{m.ack_required()}</p>
+    {/if}
+    <button class="button button--primary" type="submit">{m.ack_continue()}</button>
+  </form>
+</div>

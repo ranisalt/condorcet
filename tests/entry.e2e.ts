@@ -13,8 +13,8 @@ test("shows public election status, count-only progress, and Google-only entry",
   await expect(
     page.getByRole("main").getByText(/Esta é uma simulação para fins de estudo/),
   ).toBeVisible();
-  await expect(page.getByText(/Usamos apenas o login com Google/)).toBeVisible();
-  await expect(page.getByText("Votos válidos: 0")).toBeVisible();
+  await expect(page.getByText(/O acesso é feito apenas pelo Google/)).toBeVisible();
+  await expect(page.getByText("0 de 10.000 votos válidos", { exact: true })).toBeVisible();
   await expect(
     page.getByText(/Resultados disponíveis a partir de 10\.000 votos válidos/),
   ).toBeVisible();
@@ -23,7 +23,7 @@ test("shows public election status, count-only progress, and Google-only entry",
 
   await resetFixture({ validCount: 0, blankCount: 1 });
   await page.reload();
-  await expect(page.getByText("Votos válidos: 0")).toBeVisible();
+  await expect(page.getByText("0 de 10.000 votos válidos", { exact: true })).toBeVisible();
   await expect(page.getByText(/Votos em branco/)).toHaveCount(0);
 });
 

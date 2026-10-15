@@ -10,10 +10,15 @@
   <title>{m.thanks_title()} · {m.app_title()}</title>
 </svelte:head>
 
-<h1>{m.thanks_title()}</h1>
-<p>{data.blank ? m.thanks_blank() : m.thanks_saved()}</p>
-<p>{m.simulation_warning()}</p>
-<nav aria-label={m.main_navigation()}>
-  <a href={resolve("ballot")}>{m.edit_vote()}</a>
-  <a href={resolve("results")}>{m.nav_results()}</a>
-</nav>
+<div class="thanks-page">
+  <section class="thanks-card" aria-labelledby="thanks-heading">
+    <p class="eyebrow">{m.election_br_2026_title()}</p>
+    <h1 id="thanks-heading">{m.thanks_title()}</h1>
+    <p class="thanks-message" role="status">{data.blank ? m.thanks_blank() : m.thanks_saved()}</p>
+    <p class="notice-card">{m.simulation_warning()}</p>
+    <nav class="thanks-actions" aria-label={m.main_navigation()}>
+      <a class="button button--primary" href={resolve("ballot")}>{m.edit_vote()}</a>
+      <a class="button" href={resolve("results")}>{m.nav_results()}</a>
+    </nav>
+  </section>
+</div>

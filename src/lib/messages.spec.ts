@@ -74,17 +74,81 @@ const requiredKeys = [
   "skip_to_content",
   "main_navigation",
   "unexpected_error",
+  "home_eyebrow",
+  "home_intro",
+  "preference_illustration_label",
+  "preference_first",
+  "preference_first_hint",
+  "preference_second",
+  "preference_second_hint",
+  "preference_third",
+  "preference_third_hint",
+  "preference_caption",
+  "progress_title",
+  "progress_count",
+  "progress_open",
+  "progress_closed",
+  "progress_met",
+  "progress_remaining",
+  "progress_met_notice",
+  "progress_locked_title",
+  "progress_locked_body",
+  "progress_label",
+  "home_steps_title",
+  "home_step_one_title",
+  "home_step_one_body",
+  "home_step_two_title",
+  "home_step_two_body",
+  "home_step_three_title",
+  "home_step_three_body",
+  "study_notice_title",
+  "privacy_heading",
+  "privacy_obfuscation",
+  "ballot_unsaved_status",
+  "ballot_changes_notice",
+  "ballot_saving_status",
+  "ballot_readonly_heading",
+  "ballot_readonly_body",
+  "education_copeland_title",
+  "education_copeland_body",
+  "education_schulze_title",
+  "education_schulze_body",
+  "education_ranked_pairs_title",
+  "education_ranked_pairs_body",
+  "education_method_ties_title",
+  "education_method_ties_body",
+  "results_intro",
+  "results_locked_title",
+  "results_strict_label",
+  "results_strict_winner_description",
+  "results_no_strict_winner",
+  "results_comparison_title",
+  "results_comparison_description",
+  "results_method_navigation",
+  "results_method_outcome",
+  "results_method_result",
+  "results_copeland",
+  "results_copeland_description",
+  "results_schulze",
+  "results_schulze_description",
+  "results_ranked_pairs",
+  "results_ranked_pairs_description",
+  "results_tied_title",
+  "results_unresolved_title",
+  "results_unresolved_description",
+  "results_method_help",
+  "results_margin_description",
+  "results_margin_legend",
 ] as const;
 
 it("provides the complete nonempty Portuguese interaction and education catalog", () => {
   const catalog = new Map(Object.entries(messages));
-  const expectedKeys = ["$schema", ...requiredKeys, "hello_world"].sort();
+  const expectedKeys = ["$schema", ...requiredKeys].sort();
   expect([...catalog.keys()].sort()).toEqual(expectedKeys);
   expect(messages.$schema).toBe("https://inlang.com/schema/inlang-message-format");
   for (const key of requiredKeys) expect(catalog.get(key), key).toBeTruthy();
   expect([...catalog.values()].every((value) => value.trim().length > 0)).toBe(true);
-  // The root welcome page is still owned by another task and temporarily consumes this starter key.
-  expect(messages.hello_world).toBe("Hello, {name} from pt-br!");
+  expect(catalog.has("hello_world")).toBe(false);
 });
 
 it("keeps the simulation, privacy, and login warnings exact", () => {
@@ -95,9 +159,23 @@ it("keeps the simulation, privacy, and login warnings exact", () => {
     "Seu voto não é anônimo: ele fica associado à sua conta no banco de dados e pode ser identificado pelo operador do serviço. A Cloudflare, que hospeda o serviço, também pode ter acesso aos dados. Não utilize este serviço se deseja manter suas preferências políticas em segredo.",
   );
   expect(messages.login_explanation).toBe(
-    "Usamos apenas o login com Google para reduzir votos repetidos por conta. Isso não garante uma pessoa por voto: uma pessoa pode ter várias contas. Não oferecemos cadastro com senha.",
+    "O acesso é feito apenas pelo Google para reduzir envios repetidos por conta. Isso não garante uma pessoa por voto: uma pessoa pode usar várias contas. Não há cadastro por senha.",
   );
+  expect(messages.thanks_title).toBe("Cédula registrada");
   expect(messages.omitted_rule).toBe(
     "Candidaturas não selecionadas ficam empatadas em último lugar, abaixo de todas as candidaturas que você selecionou.",
   );
+  expect(messages.empty_rule).toContain("Votos em branco não contam como participação válida");
+  expect(messages.empty_rule).toContain("não entram nos cálculos");
+  expect(messages.privacy_obfuscation).toContain("não são criptografia");
+  expect(messages.privacy_obfuscation).toContain("associação entre voto e candidatura");
+});
+
+it("explains the three methods, tied outcomes, and unresolved exploration directly", () => {
+  expect(messages.education_copeland_body).toContain("vitórias menos derrotas");
+  expect(messages.education_schulze_body).toContain("caminho mais forte");
+  expect(messages.education_ranked_pairs_body).toContain("margem");
+  expect(messages.education_ranked_pairs_body).toContain("votos vencedores");
+  expect(messages.education_method_ties_body).toContain("todas as ordens empatadas");
+  expect(messages.education_method_ties_body).toContain("exploração");
 });

@@ -40,6 +40,7 @@ it("edits a ranked draft locally while retaining each candidate in one list", as
   await expect.element(available[1].getByText("Primeira")).toBeInTheDocument();
 
   await page.getByRole("button", { name: m.add_candidate({ name: "Segunda" }) }).click();
+  await expect.element(page.getByRole("status")).toHaveTextContent(m.ballot_unsaved_status());
   await page.getByRole("button", { name: m.add_candidate({ name: "Primeira" }) }).click();
   const ranked = page.getByRole("list", { name: m.ranked_title() });
   let items = await ranked.getByRole("listitem").all();
@@ -105,12 +106,26 @@ it("allows submitting an empty ballot", async () => {
   await expect.element(page.getByText(m.empty_rule())).toBeInTheDocument();
 });
 
+it("announces a draft returned by a native form action as unsaved", async () => {
+  await render(Ballot, {
+    props: {
+      election,
+      initialDraft: { ranked: [0], order: [0, 87] },
+      open: true,
+      unsaved: true,
+    },
+  });
+
+  await expect.element(page.getByRole("status")).toHaveTextContent(m.ballot_unsaved_status());
+});
+
 it("disables ballot editing and saving after closure", async () => {
   await render(Ballot, {
     props: { election, initialDraft: { ranked: [0], order: [0, 87] }, open: false },
   });
 
-  await expect.element(page.getByRole("status")).toHaveTextContent(m.election_closed());
+  await expect.element(page.getByText(m.election_closed())).toBeInTheDocument();
+  await expect.element(page.getByText(m.ballot_readonly_body())).toBeInTheDocument();
   await expect
     .element(page.getByRole("button", { name: m.remove_candidate({ name: "Primeira" }) }))
     .toBeDisabled();

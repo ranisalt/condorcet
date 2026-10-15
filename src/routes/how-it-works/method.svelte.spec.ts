@@ -13,13 +13,23 @@ it("explains the Condorcet winner, cycle, plurality, runoff, and study limits", 
   await expect
     .element(page.getByRole("heading", { name: m.method_paradox_title() }))
     .toBeInTheDocument();
+  await expect.element(page.getByText(m.method_paradox_body())).toBeInTheDocument();
   await expect
-    .element(
-      page.getByText(
-        "Considere três votos: A > B > C, B > C > A e C > A > B. A vence B por 2 a 1; B vence C por 2 a 1; C vence A por 2 a 1. Cada pessoa tem uma ordem coerente, mas o grupo forma um ciclo. Nesta simulação, mostramos que não há vencedor de Condorcet, sem escolher um desempate artificial.",
-      ),
-    )
+    .element(page.getByRole("heading", { name: m.education_copeland_title() }))
     .toBeInTheDocument();
+  await expect.element(page.getByText(m.education_copeland_body())).toBeInTheDocument();
+  await expect
+    .element(page.getByRole("heading", { name: m.education_schulze_title() }))
+    .toBeInTheDocument();
+  await expect.element(page.getByText(m.education_schulze_body())).toBeInTheDocument();
+  await expect
+    .element(page.getByRole("heading", { name: m.education_ranked_pairs_title() }))
+    .toBeInTheDocument();
+  await expect.element(page.getByText(m.education_ranked_pairs_body())).toBeInTheDocument();
+  await expect
+    .element(page.getByRole("heading", { name: m.education_method_ties_title() }))
+    .toBeInTheDocument();
+  await expect.element(page.getByText(m.education_method_ties_body())).toBeInTheDocument();
   await expect
     .element(page.getByRole("heading", { name: m.method_plurality_title() }))
     .toBeInTheDocument();

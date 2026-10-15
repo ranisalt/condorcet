@@ -47,7 +47,7 @@ test("saves ordered replacements, confirms blank submissions, and preserves elig
   await page.getByRole("button", { name: "Adicionar Escritor Augusto Cury" }).click();
   await page.getByRole("button", { name: "Enviar meu voto" }).click();
   await expect(page).toHaveURL(`/thanks?electionId=${electionId}`);
-  await expect(page.getByRole("heading", { name: "Obrigado por participar!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cédula registrada" })).toBeVisible();
   await expect(page.getByText(/Seu voto foi salvo/)).toBeVisible();
   expect((await readOwnRows()).ranks.map((row) => row.candidate_id)).toEqual([130, 87]);
 

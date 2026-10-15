@@ -17,15 +17,13 @@
       ? form.error
       : undefined,
   );
+  const unsaved = $derived(form !== null && "draft" in form);
 </script>
 
 <svelte:head>
   <title>{m.ballot_title()} · {m.app_title()}</title>
 </svelte:head>
 
-{#if !data.open}
-  <p role="status">{m.election_closed()}</p>
-{/if}
 {#key initialDraft}
-  <Ballot election={data.election} {initialDraft} open={data.open} {error} />
+  <Ballot election={data.election} {initialDraft} open={data.open} {error} {unsaved} />
 {/key}
