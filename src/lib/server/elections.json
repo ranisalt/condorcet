@@ -1,0 +1,102 @@
+{
+  "currentElectionId": "8bc131c5-3228-46e4-b310-3555653d815d",
+  "elections": [
+    {
+      "id": "8bc131c5-3228-46e4-b310-3555653d815d",
+      "titleKey": "election_br_2026_title",
+      "closesAt": null,
+      "resultsThreshold": 10000,
+      "sources": [
+        "https://g1.globo.com/politica/eleicoes/2026/noticia/2026/10/04/quais-sao-os-numeros-dos-candidatos-a-presidencia-nas-eleicoes-2026.ghtml",
+        "https://valor.globo.com/politica/eleicoes-2026/noticia/2026/09/30/candidatos-a-presidente-em-2026-quem-sao-numeros-e-partidos.ghtml",
+        "https://sintse.tse.jus.br/documentos/2026/Set/18/diario-da-justica-eletronico-tse/lista-de-candidatas-e-candidatos-aos-cargos-de-presidente-e-vice-presidente-da-republica"
+      ],
+      "candidates": [
+        {
+          "id": 87,
+          "name": "Escritor Augusto Cury",
+          "number": "70",
+          "party": "AVANTE",
+          "vice": { "name": "Júlio Delgado", "party": "AVANTE" }
+        },
+        {
+          "id": 94,
+          "name": "Clariana Barão",
+          "number": "27",
+          "party": "DC",
+          "vice": { "name": "Fabiana Torquato", "party": "DC" }
+        },
+        {
+          "id": 125,
+          "name": "Edmilson Costa",
+          "number": "21",
+          "party": "PCB",
+          "vice": { "name": "Cleusa Santos", "party": "PCB" }
+        },
+        {
+          "id": 97,
+          "name": "Flávio Bolsonaro",
+          "number": "22",
+          "party": "PL",
+          "vice": { "name": "Alfredo Gaspar", "party": "PL" }
+        },
+        {
+          "id": 240,
+          "name": "Hertz Dias",
+          "number": "16",
+          "party": "PSTU",
+          "vice": { "name": "Vanessa Portugal", "party": "PSTU" }
+        },
+        {
+          "id": 130,
+          "name": "Lula",
+          "number": "13",
+          "party": "PT",
+          "vice": { "name": "Geraldo Alckmin", "party": "PSB" }
+        },
+        {
+          "id": 173,
+          "name": "Renan Santos",
+          "number": "14",
+          "party": "MISSÃO",
+          "vice": { "name": "Coronel Medina", "party": "MISSÃO" }
+        },
+        {
+          "id": 141,
+          "name": "Ronaldo Caiado",
+          "number": "55",
+          "party": "PSD",
+          "vice": { "name": "Gilberto Kassab", "party": "PSD" }
+        },
+        {
+          "id": 108,
+          "name": "Zema",
+          "number": "30",
+          "party": "NOVO",
+          "vice": { "name": "Eduardo Girão", "party": "NOVO" }
+        },
+        {
+          "id": 224,
+          "name": "Rui Costa Pimenta",
+          "number": "29",
+          "party": "PCO",
+          "vice": { "name": "Antônio Carlos", "party": "PCO" }
+        },
+        {
+          "id": 137,
+          "name": "Samara",
+          "number": "80",
+          "party": "UP",
+          "vice": { "name": "Raquel Brício", "party": "UP" }
+        },
+        {
+          "id": 202,
+          "name": "Veterinário Wilson Grassi",
+          "number": "35",
+          "party": "DEMOCRATA",
+          "vice": { "name": "Suêd Haidar", "party": "DEMOCRATA" }
+        }
+      ]
+    }
+  ]
+}
