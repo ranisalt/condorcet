@@ -1,0 +1,6 @@
+allowBuilds:
+  workerd: true
+  esbuild: true
+
+trustPolicyExclude:
+  - semver
