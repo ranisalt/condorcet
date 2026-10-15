@@ -2,7 +2,16 @@
   "extends": "$app/tsconfig",
   "compilerOptions": {
     "strict": true,
+    "checkJs": false,
     "types": ["$app/types", "node", "./worker-configuration.d.ts"]
   },
-  "include": ["src", "vite.config.ts", "playwright.config.ts", "drizzle.config.ts"]
+  "include": [
+    "src",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "drizzle.config.ts",
+    "auth.schema.config.ts",
+    "tests"
+  ],
+  "exclude": ["node_modules", ".svelte-kit", "src/lib/paraglide"]
 }
