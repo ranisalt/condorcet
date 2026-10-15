@@ -208,6 +208,32 @@ it("is invariant to roster permutations and does not mutate IDs or matrix", () =
   expect(matrix).toEqual(before);
 });
 
+it.each([[0, 0], [1.5]].map((ids) => ({ ids })))(
+  "rejects duplicate or noninteger candidate IDs $ids",
+  ({ ids }) => {
+    expect(() => summarizeMethods(ids, matrixFrom([[0]]))).toThrow(TypeError);
+  },
+);
+
+it.each([-1, NaN, Infinity])("rejects invalid pairwise counts %s", (count) => {
+  expect(() =>
+    summarizeMethods(
+      [0, 1],
+      matrixFrom([
+        [0, count],
+        [0, 0],
+      ]),
+    ),
+  ).toThrow("Pairwise counts must be nonnegative integers");
+});
+
+it("rejects an incomplete pairwise matrix", () => {
+  expect(() => summarizeMethods([0], {})).toThrow("Pairwise matrix is missing a candidate row");
+  expect(() => summarizeMethods([0, 1], { 0: { 0: 0 } })).toThrow(
+    "Pairwise counts must be nonnegative integers",
+  );
+});
+
 it("marks Ranked Pairs unresolved when its explicit exploration budget is exhausted", () => {
   const ids = Array.from({ length: 12 }, (_, index) => index);
   const matrix = matrixFrom(
