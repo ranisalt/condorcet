@@ -56,14 +56,7 @@ export async function replaceBallot(
   now: Date,
 ): Promise<void> {
   const db = getDb(d1);
-  const acknowledged = await db
-    .select({ acknowledgedAt: electionParticipant.acknowledgedAt })
-    .from(electionParticipant)
-    .where(
-      and(eq(electionParticipant.electionId, electionId), eq(electionParticipant.userId, userId)),
-    )
-    .limit(1);
-  if (acknowledged.length === 0) {
+  if ((await readParticipation(d1, electionId, userId)) === null) {
     throw new Error("Election acknowledgment is required before submitting a ballot");
   }
 

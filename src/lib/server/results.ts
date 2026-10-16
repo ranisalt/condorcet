@@ -24,7 +24,7 @@ export type ResultsView =
       methods: ReturnType<typeof summarizeMethods>;
     };
 
-function buildPairwiseCountsQuery(db: ReturnType<typeof getDb>, election: Election) {
+export function buildPairwiseCountsQuery(db: ReturnType<typeof getDb>, election: Election) {
   const candidateIds = JSON.stringify(election.candidates.map((candidate) => candidate.id));
   return db
     .select({

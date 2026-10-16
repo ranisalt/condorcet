@@ -1,11 +1,9 @@
 import type { CondorcetSummary } from "./condorcet.ts";
 
 export type MethodResult = { winnerIds: number[]; unresolved: boolean };
-export type VotingMethods = {
-  copeland: MethodResult;
-  schulze: MethodResult;
-  rankedPairs: MethodResult;
-};
+export const methodIds = ["copeland", "schulze", "rankedPairs"] as const;
+export type MethodId = (typeof methodIds)[number];
+export type VotingMethods = Record<MethodId, MethodResult>;
 
 type Victory = { winner: number; loser: number; margin: number; winningVotes: number };
 type LockState = { graph: string; remaining: bigint };
@@ -199,7 +197,6 @@ function rankedPairs(
 
     const group = victories.slice(groupStart, groupEnd);
     const fullMask = (1n << BigInt(group.length)) - 1n;
-    const visited = new Set<string>();
     const pending: LockState[] = [];
     const nextGraphs = new Set<string>();
     for (const graph of possibleGraphs) {
@@ -222,11 +219,8 @@ function rankedPairs(
     while (pending.length > 0) {
       const state = pending.pop();
       if (state === undefined) continue;
-      const stateKey = `${state.remaining.toString()}:${state.graph}`;
-      if (visited.has(stateKey)) continue;
       if (exploredStates >= maxExplorationStates) return { winnerIds: [], unresolved: true };
       exploredStates += 1;
-      visited.add(stateKey);
 
       if (state.remaining === 0n) {
         nextGraphs.add(state.graph);

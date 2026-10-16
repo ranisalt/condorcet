@@ -3,6 +3,7 @@
   import { m } from "#lib/paraglide/messages.js";
   import type { Election } from "#lib/election.ts";
   import type { ResultsView } from "#lib/server/results.ts";
+  import { methodIds, type MethodId } from "#lib/voting-methods.ts";
 
   let {
     view,
@@ -11,7 +12,7 @@
     view: Extract<ResultsView, { state: "available" }> & {
       election: Pick<Election, "titleKey" | "candidates">;
     };
-    method: "copeland" | "schulze" | "rankedPairs";
+    method: MethodId;
   } = $props();
 
   const number = new Intl.NumberFormat("pt-BR");
@@ -19,8 +20,7 @@
     copeland: { label: m.results_copeland, description: m.results_copeland_description },
     schulze: { label: m.results_schulze, description: m.results_schulze_description },
     rankedPairs: { label: m.results_ranked_pairs, description: m.results_ranked_pairs_description },
-  };
-  const methodIds = ["copeland", "schulze", "rankedPairs"] as const;
+  } satisfies Record<MethodId, unknown>;
   const winner = $derived(
     view.election.candidates.find((candidate) => candidate.id === view.winnerId),
   );

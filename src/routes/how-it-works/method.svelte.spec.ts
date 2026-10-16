@@ -42,8 +42,6 @@ it("explains the Condorcet winner, cycle, plurality, runoff, and study limits", 
   await expect
     .element(page.getByRole("heading", { name: m.method_limits_title() }))
     .toBeInTheDocument();
-  await expect
-    .element(page.getByRole("heading", { name: m.method_sources() }))
-    .not.toBeInTheDocument();
+  await expect.element(page.getByRole("heading", { name: "Referências" })).not.toBeInTheDocument();
   await expect.element(page.getByRole("list")).not.toBeInTheDocument();
 });

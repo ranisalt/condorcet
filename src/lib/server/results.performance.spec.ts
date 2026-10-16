@@ -2,7 +2,8 @@ import { expect, it } from "vitest";
 import { currentElection } from "./election.ts";
 import { openTestD1 } from "../../test/d1.ts";
 import { readElectionCounts } from "./ballots.ts";
-import { readPairwiseCounts, readResults } from "./results.ts";
+import { buildPairwiseCountsQuery, readPairwiseCounts, readResults } from "./results.ts";
+import { getDb } from "./db/index.ts";
 
 const validBallots = 10_000;
 const blankBallots = 100;
@@ -119,29 +120,15 @@ performanceTest(
       expect(JSON.stringify(results)).not.toContain("perf-voter-");
       expect(JSON.stringify(results).length).toBeLessThan(32 * 1024);
 
+      const query = buildPairwiseCountsQuery(getDb(d1), currentElection).toSQL();
       const plan = await d1
-        .prepare(
-          `EXPLAIN QUERY PLAN
-          WITH candidate(id) AS (
-            SELECT CAST(value AS INTEGER) FROM json_each(?)
-          )
-          SELECT a.candidate_id AS preferredId, c.id AS otherId, count(*) AS votes
-          FROM ballot_rank a
-          JOIN candidate c ON a.candidate_id <> c.id
-          LEFT JOIN ballot_rank b
-            ON b.election_id = a.election_id
-           AND b.user_id = a.user_id
-           AND b.candidate_id = c.id
-          WHERE a.election_id = ?
-            AND (b.position IS NULL OR a.position < b.position)
-          GROUP BY a.candidate_id, c.id`,
-        )
-        .bind(JSON.stringify(candidateIds), currentElection.id)
+        .prepare(`EXPLAIN QUERY PLAN ${query.sql}`)
+        .bind(...query.params)
         .all<{ detail: string }>();
       expect(
         plan.results.some(
           (row) =>
-            row.detail.includes("SEARCH b") &&
+            row.detail.includes("SEARCH opponent") &&
             (row.detail.includes("INDEX") || row.detail.includes("PRIMARY KEY")),
         ),
       ).toBe(true);

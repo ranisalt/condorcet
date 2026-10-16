@@ -3,6 +3,7 @@ import { env } from "cloudflare:workers";
 import { m } from "#lib/paraglide/messages.js";
 import { currentElection } from "#lib/server/election.ts";
 import { readResults } from "#lib/server/results.ts";
+import { methodIds } from "#lib/voting-methods.ts";
 import type { PageServerLoad } from "./$types";
 
 export const load = (async ({ locals, url }) => {
@@ -16,13 +17,9 @@ export const load = (async ({ locals, url }) => {
     };
   }
 
+  const requestedMethod = url.searchParams.get("method");
   return {
-    method:
-      url.searchParams.get("method") === "schulze"
-        ? ("schulze" as const)
-        : url.searchParams.get("method") === "rankedPairs"
-          ? ("rankedPairs" as const)
-          : ("copeland" as const),
+    method: methodIds.find((id) => id === requestedMethod) ?? "copeland",
     view: {
       ...view,
       election: {
