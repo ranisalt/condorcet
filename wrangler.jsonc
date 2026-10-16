@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "condorcet",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "07a0862c-5387-462f-98e9-7d8b80261848",
       "migrations_dir": "drizzle",
     },
   ],
