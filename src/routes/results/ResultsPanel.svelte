@@ -231,10 +231,8 @@
     gap: 0.75rem;
   }
   .method-winners li {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    align-items: baseline;
+    display: grid;
+    gap: 0.25rem;
   }
   small {
     display: block;

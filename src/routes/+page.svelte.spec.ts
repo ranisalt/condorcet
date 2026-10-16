@@ -59,6 +59,6 @@ it("discloses account-linked access and simulated participation before sign-in",
   await expect.element(page.getByText(m.privacy_warning())).toBeInTheDocument();
   await expect.element(page.getByText(m.privacy_obfuscation())).toBeInTheDocument();
   await expect.element(page.getByText(m.login_explanation())).toBeInTheDocument();
-  await expect.element(page.getByText(m.simulation_warning())).toBeInTheDocument();
+  await expect.element(page.getByText(m.simulation_warning())).not.toBeInTheDocument();
   await expect.element(page.getByRole("button", { name: m.sign_in() })).toBeInTheDocument();
 });

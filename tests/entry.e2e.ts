@@ -11,7 +11,7 @@ test("shows public election status, count-only progress, and Google-only entry",
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("main").getByText(/Esta é uma simulação para fins de estudo/),
+    page.getByRole("contentinfo").getByText(/Esta é uma simulação para fins de estudo/),
   ).toBeVisible();
   await expect(page.getByText(/O acesso é feito apenas pelo Google/)).toBeVisible();
   await expect(page.getByText("0 de 10.000 votos válidos", { exact: true })).toBeVisible();

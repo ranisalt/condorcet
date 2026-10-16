@@ -46,6 +46,11 @@ it("separates strict Condorcet status from tied method outcomes and renders sign
     await expect
       .element(outcome.getByText(`Vice: Vice ${id} (TESTE)`, { exact: true }))
       .toBeVisible();
+    const president = outcome.getByText(`Candidatura ${id}`, { exact: true }).element();
+    const vice = outcome.getByText(`Vice: Vice ${id} (TESTE)`, { exact: true }).element();
+    expect(vice.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      president.getBoundingClientRect().bottom,
+    );
   }
   await expect
     .element(page.getByRole("link", { name: "Copeland", exact: true }))

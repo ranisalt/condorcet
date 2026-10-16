@@ -36,5 +36,4 @@
     <span class="brand-name">{m.app_title()}</span>
   </a>
   <p>{m.simulation_warning()}</p>
-  <span class="footer-label">{m.study_notice_title()}</span>
 </footer>

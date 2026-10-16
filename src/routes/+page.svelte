@@ -166,9 +166,4 @@
       </li>
     </ol>
   </section>
-
-  <aside class="study-notice" aria-labelledby="study-heading">
-    <h2 id="study-heading">{m.study_notice_title()}</h2>
-    <p>{m.simulation_warning()}</p>
-  </aside>
 </div>
