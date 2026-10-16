@@ -14,6 +14,30 @@ test.beforeEach(async () => {
   await resetFixture({ validCount: 0, blankCount: 0 });
 });
 
+test("fills the submit bar with text without shrinking its button", async ({ page, context }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openAcknowledgedBallot(page, context);
+  const button = page.getByRole("button", { name: "Enviar meu voto", exact: true });
+  const text = button.locator("..").getByRole("paragraph");
+  await expect(button).toHaveCSS("flex-shrink", "0");
+  const textBox = await text.boundingBox();
+  const buttonBox = await button.boundingBox();
+  expect(textBox).not.toBeNull();
+  expect(buttonBox).not.toBeNull();
+  if (textBox && buttonBox) {
+    expect(textBox.width).toBeGreaterThan(608);
+    expect(buttonBox.x - (textBox.x + textBox.width)).toBeCloseTo(24, 0);
+  }
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect(button).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: test.info().outputPath(`ballot-${width}.png`), fullPage: true });
+  }
+});
+
 test("edits ticket ranks locally, preserves vice details, and leaves storage unchanged until submit", async ({
   page,
   context,

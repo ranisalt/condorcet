@@ -221,9 +221,7 @@
     font-size: 1.5rem;
     margin-block: 0.5rem;
   }
-  .method-outcome p {
-    max-width: 70ch;
-  }
+
   .method-winners {
     list-style: none;
     padding: 0;

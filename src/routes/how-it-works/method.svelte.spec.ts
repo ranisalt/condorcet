@@ -23,7 +23,7 @@ it("explains the Condorcet winner, cycle, plurality, runoff, and study limits", 
     .toBeInTheDocument();
   await expect.element(page.getByText(m.education_schulze_body())).toBeInTheDocument();
   await expect
-    .element(page.getByRole("heading", { name: m.education_ranked_pairs_title() }))
+    .element(page.getByRole("heading", { name: "Tideman: pares ranqueados" }))
     .toBeInTheDocument();
   await expect.element(page.getByText(m.education_ranked_pairs_body())).toBeInTheDocument();
   await expect
@@ -42,4 +42,8 @@ it("explains the Condorcet winner, cycle, plurality, runoff, and study limits", 
   await expect
     .element(page.getByRole("heading", { name: m.method_limits_title() }))
     .toBeInTheDocument();
+  await expect
+    .element(page.getByRole("heading", { name: m.method_sources() }))
+    .not.toBeInTheDocument();
+  await expect.element(page.getByRole("list")).not.toBeInTheDocument();
 });

@@ -4,6 +4,9 @@ test("keeps the home hierarchy compact and the disclaimer only in the footer", a
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   const main = page.getByRole("main");
+  for (const paragraph of await main.getByRole("paragraph").all()) {
+    await expect(paragraph).toHaveCSS("max-width", "none");
+  }
   const disclaimer = /Esta é uma simulação para fins de estudo/;
   await expect(main.getByText(disclaimer)).toHaveCount(0);
   await expect(page.getByRole("contentinfo").getByText(disclaimer)).toBeVisible();
@@ -40,6 +43,9 @@ test("keeps the home hierarchy compact and the disclaimer only in the footer", a
 
 test("stacks method explanations at desktop and mobile widths", async ({ page }) => {
   await page.goto("/how-it-works");
+  for (const paragraph of await page.getByRole("main").getByRole("paragraph").all()) {
+    await expect(paragraph).toHaveCSS("max-width", "none");
+  }
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.screenshot({ path: test.info().outputPath(`methods-${width}.png`), fullPage: true });
@@ -47,7 +53,7 @@ test("stacks method explanations at desktop and mobile widths", async ({ page })
     for (const name of [
       "Copeland: saldo de vitórias e derrotas",
       "Schulze: caminhos de vitórias",
-      "Ranked Pairs: travamento por força",
+      "Tideman: pares ranqueados",
     ]) {
       const box = await page.getByRole("heading", { name, exact: true }).boundingBox();
       expect(box).not.toBeNull();

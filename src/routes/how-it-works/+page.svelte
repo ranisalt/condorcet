@@ -60,34 +60,4 @@
     <h2>{m.education_method_ties_title()}</h2>
     <p>{m.education_method_ties_body()}</p>
   </section>
-
-  <section class="source-list">
-    <h2>{m.method_sources()}</h2>
-    <ul>
-      <li>
-        <a
-          href="https://g1.globo.com/politica/eleicoes/2026/noticia/2026/10/04/quais-sao-os-numeros-dos-candidatos-a-presidencia-nas-eleicoes-2026.ghtml"
-          >g1.globo.com</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://valor.globo.com/politica/eleicoes-2026/noticia/2026/09/30/candidatos-a-presidente-em-2026-quem-sao-numeros-e-partidos.ghtml"
-          >valor.globo.com</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://sintse.tse.jus.br/documentos/2026/Set/18/diario-da-justica-eletronico-tse/lista-de-candidatas-e-candidatos-aos-cargos-de-presidente-e-vice-presidente-da-republica"
-          >sintse.tse.jus.br</a
-        >
-      </li>
-      <li><a href="https://plato.stanford.edu/entries/voting-methods/">plato.stanford.edu</a></li>
-      <li>
-        <a href="https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm"
-          >planalto.gov.br</a
-        >
-      </li>
-    </ul>
-  </section>
 </article>

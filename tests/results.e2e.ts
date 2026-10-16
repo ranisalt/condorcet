@@ -54,7 +54,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   await expect(page.getByRole("columnheader", { name: /Lula/ })).toBeVisible();
   await expect(page.getByRole("cell", { name: /10\.000/ }).first()).toBeVisible();
 
-  for (const method of ["Schulze / Beatpath", "Ranked Pairs / Tideman", "Copeland"]) {
+  for (const method of ["Schulze / Beatpath", "Tideman", "Copeland"]) {
     await page.getByRole("link", { name: method, exact: true }).click();
     await expect(page.getByRole("link", { name: method, exact: true })).toHaveAttribute(
       "aria-current",
@@ -84,10 +84,8 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
     await expect(
       nativePage.getByRole("link", { name: "Schulze / Beatpath", exact: true }),
     ).toHaveAttribute("aria-current", "page");
-    await nativePage.getByRole("link", { name: "Ranked Pairs / Tideman", exact: true }).click();
-    await expect(
-      nativePage.getByRole("region", { name: "Resultado por Ranked Pairs / Tideman" }),
-    ).toBeVisible();
+    await nativePage.getByRole("link", { name: "Tideman", exact: true }).click();
+    await expect(nativePage.getByRole("region", { name: "Resultado por Tideman" })).toBeVisible();
     await nativePage.goto("http://localhost:4173/results?method=invalid");
     await expect(nativePage.getByRole("link", { name: "Copeland", exact: true })).toHaveAttribute(
       "aria-current",

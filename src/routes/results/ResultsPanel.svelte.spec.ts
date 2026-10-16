@@ -80,7 +80,7 @@ it("reports an unresolved tied-order exploration instead of a fabricated winner"
     methods: { ...view.methods, rankedPairs: { winnerIds: [], unresolved: true } },
   };
   await render(ResultsPanel, { props: { view: unresolved, method: "rankedPairs" } });
-  const outcome = page.getByRole("region", { name: "Resultado por Ranked Pairs / Tideman" });
+  const outcome = page.getByRole("region", { name: "Resultado por Tideman" });
   await expect.element(outcome.getByText("Resultado não determinado")).toBeVisible();
   await expect
     .element(outcome.getByText("Candidatura 130", { exact: true }))
