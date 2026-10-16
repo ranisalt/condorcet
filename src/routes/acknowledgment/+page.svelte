@@ -38,6 +38,8 @@
     </label>
     {#if form?.required || form?.invalid}
       <p class="form-error" role="alert">{m.ack_required()}</p>
+    {:else if form?.stale}
+      <p class="form-error" role="alert">{m.stale_election()}</p>
     {/if}
     <button class="button button--primary" type="submit">{m.ack_continue()}</button>
   </form>

@@ -22,3 +22,15 @@ it("places all simulation, account, hosting, and obfuscation disclosures before 
   await expect.element(page.getByText(m.login_explanation())).toBeInTheDocument();
   await expect.element(page.getByRole("checkbox", { name: m.ack_label() })).toBeInTheDocument();
 });
+
+it("shows the stale-election message when the action rejects an outdated election", async () => {
+  await render(AcknowledgmentPage, { props: { data, form: { stale: true }, params: {} } });
+
+  await expect.element(page.getByRole("alert")).toHaveTextContent(m.stale_election());
+});
+
+it("keeps the acknowledgment-required message when consent is missing", async () => {
+  await render(AcknowledgmentPage, { props: { data, form: { required: true }, params: {} } });
+
+  await expect.element(page.getByRole("alert")).toHaveTextContent(m.ack_required());
+});

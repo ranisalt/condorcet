@@ -64,3 +64,24 @@ test("rejects unchecked consent and does not create a submission", async ({ page
     await database.dispose();
   }
 });
+
+test("shows the stale-election error after a rejected acknowledgment", async ({
+  page,
+  context,
+}) => {
+  await signInFixture(context, "test-voter");
+  await page.goto("/acknowledgment");
+  await page.route("**/acknowledgment", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const form = new URLSearchParams(route.request().postData() ?? "");
+    form.set("electionId", "stale-election");
+    await route.continue({ postData: form.toString() });
+  });
+  await page.getByRole("checkbox", { name: /Li e compreendi os avisos/ }).check();
+  await page.getByRole("button", { name: "Concordar e abrir a cédula" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "A simulação mudou desde que esta cédula foi aberta. Reabra a cédula antes de enviar.",
+  );
+  await page.goto("/ballot");
+  await expect(page).toHaveURL(/\/acknowledgment$/);
+});
