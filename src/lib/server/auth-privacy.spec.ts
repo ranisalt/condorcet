@@ -20,7 +20,7 @@ async function openAuthFixture() {
       database: drizzleAdapter(db, { provider: "sqlite" }),
     });
     const { internalAdapter } = await auth.$context;
-    return { ...fixture, db, internalAdapter };
+    return { ...fixture, db, auth, internalAdapter };
   } catch (error) {
     await fixture.dispose();
     throw error;
@@ -40,6 +40,36 @@ const providerAccount = {
   refreshToken: "synthetic-refresh-token",
   idToken: "synthetic-profile-bearing-id-token",
 };
+
+it("rate-limits Cloudflare clients independently and ignores spoofed forwarded addresses", async () => {
+  const fixture = await openAuthFixture();
+  try {
+    const statuses: number[] = [];
+    for (let index = 0; index < 5; index += 1) {
+      const response = await fixture.auth.handler(
+        new Request("http://localhost:4173/api/auth/sign-up/email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://localhost:4173",
+            "CF-Connecting-IP": index < 4 ? "203.0.113.1" : "203.0.113.2",
+            "X-Forwarded-For": `198.51.100.${index + 1}`,
+          },
+          body: JSON.stringify({
+            name: "Synthetic Test Voter",
+            email: "rate-limit@example.invalid",
+            password: "synthetic-disabled-password",
+          }),
+        }),
+      );
+      statuses.push(response.status);
+    }
+    expect(statuses).toEqual([400, 400, 400, 429, 400]);
+    expect(await fixture.db.select().from(user)).toEqual([]);
+  } finally {
+    await fixture.dispose();
+  }
+});
 
 it("does not persist Google names, avatars, or unnecessary provider tokens on first login", async () => {
   const fixture = await openAuthFixture();

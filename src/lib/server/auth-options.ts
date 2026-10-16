@@ -26,6 +26,7 @@ export function buildAuthOptions(config: AuthConfig) {
     emailAndPassword: { enabled: false },
     account: { accountLinking: { enabled: false } },
     trustedOrigins: [config.origin],
+    advanced: { ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] } },
     rateLimit: { enabled: true, storage: "database", window: 60, max: 60 },
     databaseHooks: {
       user: {

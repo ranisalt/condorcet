@@ -31,6 +31,8 @@ Register `<ORIGIN>/api/auth/callback/google` as a Google authorized redirect URI
 
 Authentication retains the email and provider account identifier needed to recognize returning accounts. Database hooks leave Better Auth's required name field empty, discard avatars, and discard Google access/refresh/ID tokens on both creation and update. This minimizes stored profile data; it does not anonymize ballots.
 
+Authentication rate limits use Cloudflare's `CF-Connecting-IP` header, not client-supplied `X-Forwarded-For`. This assumes deployment on Cloudflare Workers; another hosting setup must supply an equivalent trusted client-IP boundary. Local requests without that header may share a fallback bucket.
+
 For deliberate schema changes, generate and inspect SQL before applying it:
 
 ```sh
