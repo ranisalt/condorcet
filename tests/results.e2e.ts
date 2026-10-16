@@ -101,6 +101,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   await page.goto("/ballot");
   await page.getByRole("button", { name: "Remover Escritor Augusto Cury" }).click();
   await page.getByRole("button", { name: "Enviar meu voto" }).click();
+  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${electionId}`));
 
   await signInFixture(context, "test-voter");
   await page.goto("/results");
