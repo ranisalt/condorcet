@@ -253,23 +253,17 @@ export async function resetFixture(options: FixtureOptions = {}): Promise<void> 
 
   const proxy = await openProxy();
   try {
-    const tablesResult = await proxy.d1
-      .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
-      .all<{ name: string }>();
-    const tables = new Set(tablesResult.results.map(({ name }) => name));
-    const electionSchemaAvailable = tables.has("election_participant") && tables.has("ballot_rank");
-    if ((validCount > 0 || blankCount > 0) && !electionSchemaAvailable) {
-      throw new Error(
-        "Ballot fixture seeding requires the election_participant and ballot_rank migrations.",
-      );
-    }
-
-    if (electionSchemaAvailable) {
-      await proxy.d1.prepare("DELETE FROM ballot_rank").run();
-      await proxy.d1.prepare("DELETE FROM election_participant").run();
-    }
-    for (const table of ["rate_limit", "verification", "session", "account", "user"]) {
-      if (tables.has(table)) await proxy.d1.prepare(`DELETE FROM ${table}`).run();
+    // Child tables first; openProxy applies every migration or throws.
+    for (const table of [
+      "ballot_rank",
+      "election_participant",
+      "rate_limit",
+      "verification",
+      "session",
+      "account",
+      "user",
+    ]) {
+      await proxy.d1.prepare(`DELETE FROM ${table}`).run();
     }
 
     const fixtureUsers = [
