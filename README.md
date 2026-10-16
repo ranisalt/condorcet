@@ -20,14 +20,15 @@ The all-zero D1 ID in `wrangler.jsonc` is local-only. Local migrations need no C
 
 Configure these variables privately, never committing values:
 
-| Variable               | Purpose                                                  |
-| ---------------------- | -------------------------------------------------------- |
-| `ORIGIN`               | Exact application origin, including the development port |
-| `BETTER_AUTH_SECRET`   | Cryptographically random production auth secret          |
-| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                                   |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                               |
+| Variable               | Purpose                                         |
+| ---------------------- | ----------------------------------------------- |
+| `BETTER_AUTH_SECRET`   | Cryptographically random production auth secret |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID                          |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                      |
 
-Register `<ORIGIN>/api/auth/callback/google` as a Google authorized redirect URI for each intended origin. `localhost` and `127.0.0.1` are different origins. Password authentication and cross-provider linking are disabled; Google accounts do not guarantee one human/one vote.
+The application derives its origin from each incoming Cloudflare Worker request (`event.url.origin`); no origin environment variable is needed. Authentication callbacks and trusted origins use that exact scheme, host, and port, not `Origin` or forwarded headers. This also works with custom domains and local development.
+
+Register `https://<your-worker-or-custom-domain>/api/auth/callback/google` as a Google authorized redirect URI (and the corresponding HTTP URL for local development). Google still requires each intended callback URL to be registered; `localhost` and `127.0.0.1` are different origins. Password authentication and cross-provider linking are disabled; Google accounts do not guarantee one human/one vote.
 
 Authentication retains the email and provider account identifier needed to recognize returning accounts. Database hooks leave Better Auth's required name field empty, discard avatars, and discard Google access/refresh/ID tokens on both creation and update. This minimizes stored profile data; it does not anonymize ballots.
 

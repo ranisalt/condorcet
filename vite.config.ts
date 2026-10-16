@@ -52,7 +52,6 @@ export default defineConfig(({ mode }) => {
             },
           ],
           vars: {
-            ORIGIN: "http://localhost:4173",
             BETTER_AUTH_SECRET: "condorcet-local-test-secret-32-characters",
             GOOGLE_CLIENT_ID: "test-client",
             GOOGLE_CLIENT_SECRET: "test-secret",

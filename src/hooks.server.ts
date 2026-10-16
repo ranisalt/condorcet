@@ -1,10 +1,5 @@
 import { building } from "$app/env";
-import {
-  ORIGIN,
-  BETTER_AUTH_SECRET,
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-} from "$app/env/private";
+import { BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from "$app/env/private";
 import { env } from "cloudflare:workers";
 import { createAuth } from "#lib/server/auth.ts";
 import { privateResponse } from "#lib/server/private-response.ts";
@@ -30,7 +25,7 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
 
   const auth = createAuth(env.DB, {
-    origin: ORIGIN,
+    origin: event.url.origin,
     secret: BETTER_AUTH_SECRET,
     googleClientId: GOOGLE_CLIENT_ID,
     googleClientSecret: GOOGLE_CLIENT_SECRET,

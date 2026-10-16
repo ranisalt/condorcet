@@ -40,7 +40,6 @@ export async function createE2EWranglerConfig(
       },
     ],
     vars: {
-      ORIGIN: TEST_ORIGIN,
       BETTER_AUTH_SECRET: TEST_SECRET,
       GOOGLE_CLIENT_ID: "test-client",
       GOOGLE_CLIENT_SECRET: "test-secret",

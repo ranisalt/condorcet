@@ -1,18 +1,11 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
-import {
-  createE2EWranglerConfig,
-  initializeE2ED1,
-  TEST_ORIGIN,
-  TEST_SECRET,
-} from "../tests/helpers/d1.ts";
+import { createE2EWranglerConfig, initializeE2ED1, TEST_SECRET } from "../tests/helpers/d1.ts";
 
 const root = process.cwd();
 const preview = process.env.E2E_PREVIEW === "1";
-const origin = TEST_ORIGIN;
 const secret = TEST_SECRET;
 const syntheticAuthEnv = {
-  ORIGIN: origin,
   BETTER_AUTH_SECRET: secret,
   GOOGLE_CLIENT_ID: "test-client",
   GOOGLE_CLIENT_SECRET: "test-secret",

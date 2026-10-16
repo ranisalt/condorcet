@@ -38,32 +38,49 @@ test("shows ballot and logout entry controls for a signed-in account", async ({
   await expect(page.getByRole("button", { name: "Entrar com Google" })).toHaveCount(0);
 });
 
-test("starts Google OAuth by native POST with a fixed callback and state cookie", async ({
-  request,
-}) => {
-  const response = await request.post("/?/login", {
-    form: {},
-    headers: { Accept: "text/html", Origin: TEST_ORIGIN },
+for (const origin of [TEST_ORIGIN, "http://127.0.0.1:4173"]) {
+  test(`starts Google OAuth on the request origin ${origin} with a state cookie`, async ({
+    request,
+  }) => {
+    const response = await request.post("/?/login", {
+      form: {},
+      headers: {
+        Accept: "text/html",
+        Host: new URL(origin).host,
+        Origin: origin,
+        "X-Forwarded-Host": "untrusted.example.invalid",
+        "X-Forwarded-Proto": "https",
+      },
+      maxRedirects: 0,
+    });
+    expect(response.status()).toBe(303);
+    const location = response.headers().location;
+    expect(location).toBeDefined();
+    const providerUrl = new URL(location ?? "", TEST_ORIGIN);
+    expect(providerUrl.hostname).toBe("accounts.google.com");
+    expect(providerUrl.searchParams.get("redirect_uri")).toBe(`${origin}/api/auth/callback/google`);
+    expect(providerUrl.searchParams.get("state")).toBeTruthy();
+    expect(response.headers()["set-cookie"]).toContain("better-auth.state");
+
+    const database = await openE2ED1();
+    try {
+      const users = await database.d1
+        .prepare("SELECT count(*) AS count FROM user")
+        .first<{ count: number }>();
+      expect(users?.count).toBe(2);
+    } finally {
+      await database.dispose();
+    }
+  });
+}
+
+test("rejects cross-origin authentication requests carrying a session", async ({ context }) => {
+  await signInFixture(context, "test-voter");
+  const response = await context.request.post("/api/auth/sign-in/social", {
+    headers: { Origin: "https://untrusted.example.invalid" },
+    data: { provider: "google", callbackURL: "/ballot" },
     maxRedirects: 0,
   });
-  expect(response.status()).toBe(303);
-  const location = response.headers().location;
-  expect(location).toBeDefined();
-  const providerUrl = new URL(location ?? "", TEST_ORIGIN);
-  expect(providerUrl.hostname).toBe("accounts.google.com");
-  expect(providerUrl.searchParams.get("redirect_uri")).toBe(
-    `${TEST_ORIGIN}/api/auth/callback/google`,
-  );
-  expect(providerUrl.searchParams.get("state")).toBeTruthy();
-  expect(response.headers()["set-cookie"]).toContain("better-auth.state");
 
-  const database = await openE2ED1();
-  try {
-    const users = await database.d1
-      .prepare("SELECT count(*) AS count FROM user")
-      .first<{ count: number }>();
-    expect(users?.count).toBe(2);
-  } finally {
-    await database.dispose();
-  }
+  expect(response.status()).toBe(403);
 });
