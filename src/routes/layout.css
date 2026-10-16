@@ -585,8 +585,14 @@ progress::-moz-progress-bar {
 }
 
 .rule-note {
+  padding-inline-start: 2.4rem;
   color: var(--muted);
   font-size: 0.875rem;
+  list-style: disc;
+}
+
+.rule-note li + li {
+  margin-block-start: 0.4rem;
 }
 
 .readonly-notice,

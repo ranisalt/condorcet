@@ -99,9 +99,11 @@
       <p>{m.privacy_warning()}</p>
       <p>{m.privacy_obfuscation()}</p>
     </section>
-    <p class="rule-note">{m.omitted_rule()}</p>
-    <p class="rule-note">{m.empty_rule()}</p>
-    <p class="rule-note">{m.ballot_changes_notice()}</p>
+    <ul class="rule-note">
+      <li>{m.omitted_rule()}</li>
+      <li>{m.empty_rule()}</li>
+      <li>{m.ballot_changes_notice()}</li>
+    </ul>
   </div>
 
   {#if !open}
