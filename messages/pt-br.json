@@ -133,5 +133,12 @@
   "results_unresolved_description": "O cálculo atingiu o limite de exploração das ordens empatadas. Por isso, não há como apresentar uma vencedora nem o conjunto completo de vencedoras.",
   "results_method_help": "Consultar as regras e os limites dos métodos",
   "results_margin_description": "Cada célula mostra a margem da candidatura da linha contra a da coluna: votos a favor da linha menos votos a favor da coluna. Candidaturas omitidas na mesma cédula empatam entre si. Votos em branco são excluídos.",
-  "results_margin_legend": "Valor positivo: vantagem da linha. Valor negativo: vantagem da coluna. Zero: empate. Traço: comparação da candidatura consigo mesma."
+  "results_margin_legend": "Valor positivo: vantagem da linha. Valor negativo: vantagem da coluna. Zero: empate. Traço: comparação da candidatura consigo mesma.",
+  "consent_page_title": "Autorizar acesso · Simulador Condorcet",
+  "consent_title": "Autorizar acesso",
+  "consent_loading": "Verificando seu login…",
+  "consent_sign_in_intro": "Entre com Google para continuar. Seu login é usado apenas para autorizar este pedido.",
+  "consent_redirecting": "Acesso autorizado. Voltando ao simulador…",
+  "consent_error_missing_authorization_id": "Este link de autorização está incompleto. Volte ao simulador e tente entrar novamente.",
+  "consent_error_api_error": "Não foi possível concluir a autorização. Volte ao simulador e tente entrar novamente."
 }

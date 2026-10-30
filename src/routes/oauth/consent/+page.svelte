@@ -2,6 +2,7 @@
   import { createClient } from "@supabase/supabase-js";
   import { onMount } from "svelte";
   import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from "$app/env/public";
+  import { m } from "#lib/paraglide/messages.js";
   import {
     approvePendingAuthorization,
     resolveAuthorizationId,
@@ -19,10 +20,8 @@
   let view = $state<View>({ kind: "loading" });
 
   const errorCopy: Record<ConsentFailureReason, string> = {
-    missing_authorization_id:
-      "This authorization link is incomplete. Go back to the app that asked you to sign in and try again.",
-    api_error:
-      "We could not complete the authorization. Go back to the app that asked you to sign in and try again.",
+    missing_authorization_id: m.consent_error_missing_authorization_id(),
+    api_error: m.consent_error_api_error(),
   };
 
   onMount(async () => {
@@ -64,22 +63,20 @@
 </script>
 
 <svelte:head>
-  <title>Authorize access · Condorcet</title>
+  <title>{m.consent_page_title()}</title>
 </svelte:head>
 
 <div class="oauth-consent-page">
   <section class="notice-card" aria-labelledby="oauth-consent-title">
-    <h1 id="oauth-consent-title">Authorize access</h1>
+    <h1 id="oauth-consent-title">{m.consent_title()}</h1>
 
     {#if view.kind === "loading"}
-      <p role="status">Checking your sign-in…</p>
+      <p role="status">{m.consent_loading()}</p>
     {:else if view.kind === "signin"}
-      <p>Sign in with Google to continue. Your sign-in is used only to authorize this request.</p>
-      <button class="button button--primary" type="button" onclick={signIn}
-        >Continue with Google</button
-      >
+      <p>{m.consent_sign_in_intro()}</p>
+      <button class="button button--primary" type="button" onclick={signIn}>{m.sign_in()}</button>
     {:else if view.kind === "redirecting"}
-      <p role="status">Authorization approved. Returning you to the app…</p>
+      <p role="status">{m.consent_redirecting()}</p>
     {:else}
       <p role="alert">{errorCopy[view.reason]}</p>
     {/if}
