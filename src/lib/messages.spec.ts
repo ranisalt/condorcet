@@ -153,10 +153,10 @@ it("keeps the simulation, privacy, and login warnings exact", () => {
     "Esta é uma simulação para fins de estudo. Não é uma eleição oficial, não representa uma pesquisa eleitoral e seus resultados não refletem a realidade.",
   );
   expect(messages.privacy_warning).toBe(
-    "Seu voto não é anônimo: ele fica associado à sua conta no banco de dados e pode ser identificado pelo operador do serviço. A Cloudflare, que hospeda o serviço, também pode ter acesso aos dados. Não utilize este serviço se deseja manter suas preferências políticas em segredo.",
+    "Seu voto não é anônimo. Ele fica associado à sua conta no banco de dados, e o operador do serviço pode identificá-lo. A Cloudflare, que hospeda o serviço, também pode acessar os dados. Não use este serviço se quiser manter suas preferências políticas em segredo.",
   );
   expect(messages.login_explanation).toBe(
-    "O acesso é feito apenas pelo Google para reduzir envios repetidos por conta. Isso não garante uma pessoa por voto: uma pessoa pode usar várias contas. Não há cadastro por senha.",
+    "O login usa apenas o Google, para dificultar envios repetidos. Isso não garante um voto por pessoa, porque uma pessoa pode usar várias contas. Não há cadastro com senha.",
   );
   expect(messages.thanks_title).toBe("Cédula registrada");
   expect(messages.omitted_rule).toBe(
@@ -164,8 +164,8 @@ it("keeps the simulation, privacy, and login warnings exact", () => {
   );
   expect(messages.empty_rule).toContain("Votos em branco não contam como participação válida");
   expect(messages.empty_rule).toContain("não entram nos cálculos");
-  expect(messages.privacy_obfuscation).toContain("não são criptografia");
-  expect(messages.privacy_obfuscation).toContain("associação entre voto e candidatura");
+  expect(messages.privacy_obfuscation).toContain("não criptografia");
+  expect(messages.privacy_obfuscation).toContain("ordem de candidaturas de cada voto");
 });
 
 it("explains the three methods, tied outcomes, and unresolved exploration directly", () => {

@@ -37,7 +37,7 @@ const view: Extract<ResultsView, { state: "available" }> & { election: typeof el
 it("separates strict Condorcet status from tied method outcomes and renders signed margins", async () => {
   await render(ResultsPanel, { props: { view, method: "copeland" } });
   await expect
-    .element(page.getByRole("heading", { name: "Não há vencedor de Condorcet" }))
+    .element(page.getByRole("heading", { name: "Não há vencedora de Condorcet" }))
     .toBeVisible();
   const outcome = page.getByRole("region", { name: "Resultado por Copeland" });
   await expect.element(outcome.getByText("Empate entre candidaturas")).toBeVisible();
@@ -70,7 +70,7 @@ it("shows the selected method winner without claiming a strict Condorcet winner"
   await expect.element(outcome.getByText("Vice: Vice 130 (TESTE)", { exact: true })).toBeVisible();
   await expect.element(outcome.getByText("Candidatura 0", { exact: true })).not.toBeInTheDocument();
   await expect
-    .element(page.getByRole("heading", { name: "Não há vencedor de Condorcet" }))
+    .element(page.getByRole("heading", { name: "Não há vencedora de Condorcet" }))
     .toBeVisible();
 });
 
