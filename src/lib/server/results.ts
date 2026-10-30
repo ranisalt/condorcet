@@ -40,7 +40,7 @@ export function buildPairwiseCountsQuery(db: ReturnType<typeof getDb>, election:
     .leftJoin(
       sql`ballot_rank AS opponent`,
       sql`opponent.election_id = "ballot_rank"."election_id"
-        AND opponent.user_id = "ballot_rank"."user_id"
+        AND opponent.voter_id = "ballot_rank"."voter_id"
         AND opponent.candidate_id = CAST(candidate.value AS INTEGER)`,
     )
     .where(
@@ -62,16 +62,16 @@ export async function readPairwiseCounts(
 export async function readResults(
   d1: D1Database,
   election: Election,
-  userId: string | null,
+  voterId: string | null,
 ): Promise<ResultsView> {
   const db = getDb(d1);
   const [precheckParticipation, precheckCounts] = await Promise.all([
-    userId === null ? Promise.resolve(null) : readParticipation(d1, election.id, userId),
+    voterId === null ? Promise.resolve(null) : readParticipation(d1, election.id, voterId),
     readElectionCounts(d1, election.id),
   ]);
 
   if (
-    userId === null ||
+    voterId === null ||
     precheckParticipation === null ||
     precheckParticipation.submittedAt === null
   ) {
@@ -95,7 +95,10 @@ export async function readResults(
     .select({ submittedAt: electionParticipant.submittedAt })
     .from(electionParticipant)
     .where(
-      and(eq(electionParticipant.electionId, election.id), eq(electionParticipant.userId, userId)),
+      and(
+        eq(electionParticipant.electionId, election.id),
+        eq(electionParticipant.voterId, voterId),
+      ),
     )
     .limit(1);
   const [participationRows, countRows, pairs] = await db.batch([

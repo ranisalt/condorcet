@@ -2,8 +2,6 @@ import { expect, it } from "vitest";
 import type { Election } from "../election.ts";
 import { summarizeCondorcet } from "../condorcet.ts";
 import { acknowledgeElection, readElectionCounts, replaceBallot } from "./ballots.ts";
-import { getDb } from "./db/index.ts";
-import { user } from "./db/auth.schema.ts";
 import { openTestD1 } from "../../test/d1.ts";
 import { readPairwiseCounts, readResults } from "./results.ts";
 
@@ -39,22 +37,8 @@ const election: Election = {
   ],
 };
 
-async function seedUser(d1: D1Database, id: string) {
-  await getDb(d1)
-    .insert(user)
-    .values({
-      id,
-      name: `User ${id}`,
-      email: `${id}@example.invalid`,
-      emailVerified: false,
-      createdAt: at,
-      updatedAt: at,
-    });
-}
-
-async function acknowledge(d1: D1Database, userId: string) {
-  await seedUser(d1, userId);
-  await acknowledgeElection(d1, election.id, userId, at);
+async function acknowledge(d1: D1Database, voterId: string) {
+  await acknowledgeElection(d1, election.id, voterId, at);
 }
 
 it("aggregates omitted-last pairwise preferences inside D1 and isolates elections", async () => {
@@ -89,8 +73,8 @@ it("aggregates omitted-last pairwise preferences inside D1 and isolates election
 it("only exposes aggregates to submitted voters while the nonempty threshold holds", async () => {
   const { d1, dispose } = await openTestD1();
   try {
-    for (const userId of ["never", "ack-only", "blank", "valid-a", "valid-b"]) {
-      await acknowledge(d1, userId);
+    for (const voterId of ["never", "ack-only", "blank", "valid-a", "valid-b"]) {
+      await acknowledge(d1, voterId);
     }
     await replaceBallot(d1, election.id, "valid-a", [0, 87, 130], at);
     await replaceBallot(d1, election.id, "valid-b", [87, 0], at);
@@ -152,9 +136,6 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     );
 
     const boundaryElection = { ...election, id: "boundary-election" };
-    await seedUser(d1, "boundary-valid");
-    await seedUser(d1, "boundary-blank");
-    await seedUser(d1, "boundary-never");
     await acknowledgeElection(d1, boundaryElection.id, "boundary-valid", at);
     await acknowledgeElection(d1, boundaryElection.id, "boundary-blank", at);
     await replaceBallot(d1, boundaryElection.id, "boundary-valid", [0], at);
@@ -195,7 +176,6 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
     });
 
     const sparseElection = { ...election, id: "sparse-election" };
-    await seedUser(d1, "sparse-voter");
     await acknowledgeElection(d1, sparseElection.id, "sparse-voter", at);
     await replaceBallot(d1, sparseElection.id, "sparse-voter", [0], at);
     expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, sparseElection))).toEqual({
@@ -209,14 +189,13 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
 
     const cycleElection = { ...election, id: "cycle-election" };
     const cycleBallots = [
-      { userId: "cycle-a", ranking: [0, 87, 130] },
-      { userId: "cycle-b", ranking: [87, 130, 0] },
-      { userId: "cycle-c", ranking: [130, 0, 87] },
+      { voterId: "cycle-a", ranking: [0, 87, 130] },
+      { voterId: "cycle-b", ranking: [87, 130, 0] },
+      { voterId: "cycle-c", ranking: [130, 0, 87] },
     ];
     for (const ballot of cycleBallots) {
-      await seedUser(d1, ballot.userId);
-      await acknowledgeElection(d1, cycleElection.id, ballot.userId, at);
-      await replaceBallot(d1, cycleElection.id, ballot.userId, ballot.ranking, at);
+      await acknowledgeElection(d1, cycleElection.id, ballot.voterId, at);
+      await replaceBallot(d1, cycleElection.id, ballot.voterId, ballot.ranking, at);
     }
     expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, cycleElection))).toEqual({
       matrix: {
@@ -246,8 +225,8 @@ it.each(["withdrawal", "eligibility loss"] as const)(
   async (change) => {
     const { d1, dispose } = await openTestD1();
     try {
-      for (const userId of ["snapshot-a", "snapshot-b", "snapshot-blank"]) {
-        await acknowledge(d1, userId);
+      for (const voterId of ["snapshot-a", "snapshot-b", "snapshot-blank"]) {
+        await acknowledge(d1, voterId);
       }
       await replaceBallot(d1, election.id, "snapshot-a", [0], at);
       await replaceBallot(d1, election.id, "snapshot-b", [87], at);
@@ -269,7 +248,7 @@ it.each(["withdrawal", "eligibility loss"] as const)(
               await replaceBallot(d1, election.id, "snapshot-b", [], at);
             } else {
               await d1
-                .prepare("DELETE FROM election_participant WHERE election_id = ? AND user_id = ?")
+                .prepare("DELETE FROM election_participant WHERE election_id = ? AND voter_id = ?")
                 .bind(election.id, "snapshot-blank")
                 .run();
             }

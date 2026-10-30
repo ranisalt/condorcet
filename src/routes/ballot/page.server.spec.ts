@@ -1,12 +1,9 @@
 import { expect, it, vi } from "vitest";
 import { isRedirect } from "@sveltejs/kit";
-import { eq } from "drizzle-orm";
 import type { RequestEvent } from "./$types";
-import { createAuth } from "#lib/server/auth.ts";
-import { getDb } from "#lib/server/db/index.ts";
-import { user } from "#lib/server/db/auth.schema.ts";
 import { acknowledgeElection, readOwnRanking, replaceBallot } from "#lib/server/ballots.ts";
 import type { Election } from "#lib/election.ts";
+import type { VoterId } from "#lib/server/voter-session.ts";
 import { openTestD1 } from "../../test/d1.ts";
 
 const state = vi.hoisted(() => {
@@ -72,27 +69,17 @@ function makeForm(ranked: readonly number[], operation?: string): FormData {
 }
 
 async function makeEvent(
-  d1: D1Database,
+  _d1: D1Database,
   ranked: readonly number[],
   operation?: string,
 ): Promise<RequestEvent> {
-  const voters = await getDb(d1).select().from(user).where(eq(user.id, "test-voter"));
-  const voter = voters[0];
-  if (voter === undefined) throw new Error("Test voter is missing");
-
   const request = new Request("http://localhost:4173/ballot?/save", {
     method: "POST",
     body: makeForm(ranked, operation),
   });
-  const auth = createAuth(d1, {
-    origin: "http://localhost:4173",
-    secret: "condorcet-local-test-secret-32-characters",
-    googleClientId: "test-client",
-    googleClientSecret: "test-secret",
-  });
   return {
     request,
-    locals: { user: voter, auth },
+    locals: { voter: "test-voter" as VoterId },
   } as RequestEvent;
 }
 
@@ -116,21 +103,13 @@ it("allows edit/save immediately before closing and rejects both at and after th
 
   try {
     const fixedNow = new Date("2026-10-15T12:00:00.000Z");
-    await getDb(d1).insert(user).values({
-      id: "test-voter",
-      name: "Test Voter",
-      email: "test-voter@example.invalid",
-      emailVerified: true,
-      createdAt: nowBeforeClose,
-      updatedAt: nowBeforeClose,
-    });
-    await acknowledgeElection(d1, election.id, "test-voter", nowBeforeClose);
-    await replaceBallot(d1, election.id, "test-voter", [130, 87], nowBeforeClose);
+    await acknowledgeElection(d1, election.id, "test-voter" as VoterId, nowBeforeClose);
+    await replaceBallot(d1, election.id, "test-voter" as VoterId, [130, 87], nowBeforeClose);
 
     vi.setSystemTime(nowBeforeClose);
     const editBefore = await actions.edit(await makeEvent(d1, [130, 87], "up:87"));
     expect(editBefore).toEqual({ draft: { ranked: [87, 130], order: [87, 130] } });
-    expect(await readOwnRanking(d1, election.id, "test-voter")).toEqual([130, 87]);
+    expect(await readOwnRanking(d1, election.id, "test-voter" as VoterId)).toEqual([130, 87]);
 
     let redirected = false;
     try {
@@ -140,7 +119,7 @@ it("allows edit/save immediately before closing and rejects both at and after th
       if (!redirected) throw cause;
     }
     expect(redirected).toBe(true);
-    expect(await readOwnRanking(d1, election.id, "test-voter")).toEqual([87]);
+    expect(await readOwnRanking(d1, election.id, "test-voter" as VoterId)).toEqual([87]);
 
     for (const closeTime of [fixedNow, new Date(fixedNow.getTime() + 1)]) {
       vi.setSystemTime(closeTime);
@@ -148,7 +127,7 @@ it("allows edit/save immediately before closing and rejects both at and after th
       await expectClosedFailure(editAtClose);
       const saveAtClose = await actions.save(await makeEvent(d1, [130]));
       await expectClosedFailure(saveAtClose);
-      expect(await readOwnRanking(d1, election.id, "test-voter")).toEqual([87]);
+      expect(await readOwnRanking(d1, election.id, "test-voter" as VoterId)).toEqual([87]);
     }
   } finally {
     vi.useRealTimers();

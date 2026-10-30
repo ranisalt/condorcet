@@ -1,8 +1,10 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { isAPIError } from "better-auth/api";
 import { env } from "cloudflare:workers";
 import { currentElection } from "#lib/server/election.ts";
 import { readElectionCounts } from "#lib/server/ballots.ts";
+import { oidcConfigFor } from "#lib/server/oidc-config.ts";
+import { beginLogin } from "#lib/server/oidc.ts";
+import { clearVoter } from "#lib/server/voter-session.ts";
 import { isElectionOpen } from "#lib/election.ts";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -13,7 +15,7 @@ export const load = (async ({ locals, url }) => {
       election: null,
       open: false,
       validCount: 0,
-      signedIn: locals.user !== undefined,
+      signedIn: locals.voter !== undefined,
       loginError: url.searchParams.get("loginError") === "1",
     };
   }
@@ -28,33 +30,23 @@ export const load = (async ({ locals, url }) => {
     },
     open: isElectionOpen(election, new Date()),
     validCount,
-    signedIn: locals.user !== undefined,
+    signedIn: locals.voter !== undefined,
     loginError: url.searchParams.get("loginError") === "1",
   };
 }) satisfies PageServerLoad;
 
 export const actions = {
-  login: async ({ locals, request }) => {
-    let result: Awaited<ReturnType<typeof locals.auth.api.signInSocial>>;
+  login: async ({ url, cookies }) => {
+    let authorizeUrl: URL;
     try {
-      result = await locals.auth.api.signInSocial({
-        body: {
-          provider: "google",
-          callbackURL: "/ballot",
-          errorCallbackURL: "/?loginError=1",
-        },
-        headers: request.headers,
-      });
-    } catch (cause) {
-      if (isAPIError(cause)) return fail(502, { loginFailed: true });
-      throw cause;
+      authorizeUrl = await beginLogin(oidcConfigFor(url), cookies, new Date());
+    } catch {
+      return fail(502, { loginFailed: true });
     }
-
-    if (!result.url) return fail(502, { loginFailed: true });
-    redirect(303, result.url, { external: ["https://accounts.google.com"] });
+    redirect(303, authorizeUrl.href, { external: [authorizeUrl.origin] });
   },
-  logout: async ({ locals, request }) => {
-    await locals.auth.api.signOut({ headers: request.headers });
+  logout: async ({ url, cookies }) => {
+    clearVoter(cookies, url.protocol === "https:");
     redirect(303, "/");
   },
 } satisfies Actions;

@@ -20,14 +20,18 @@ export const variables = defineEnvVars({
       return value;
     },
   },
-  BETTER_AUTH_SECRET: {
+  SESSION_SECRET: {
     description:
-      "Secret used to sign tokens. For production use 32 characters generated with high entropy. See [Better Auth installation](https://www.better-auth.com/docs/installation).",
+      "HMAC secret that signs the voter session cookie. Use at least 32 characters with high entropy.",
   },
-  GOOGLE_CLIENT_ID: {
-    description: "OAuth client ID for the Google sign-in provider.",
+  OIDC_ISSUER: {
+    description:
+      "Supabase OAuth 2.1 issuer, e.g. https://<project-ref>.supabase.co/auth/v1. Must match the token issuer.",
   },
-  GOOGLE_CLIENT_SECRET: {
-    description: "OAuth client secret for the Google sign-in provider.",
+  OIDC_CLIENT_ID: {
+    description: "OAuth client ID registered with the Supabase OAuth server for this app.",
+  },
+  OIDC_CLIENT_SECRET: {
+    description: "OAuth client secret registered with the Supabase OAuth server for this app.",
   },
 });

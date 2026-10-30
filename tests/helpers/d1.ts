@@ -1,9 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { access, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { drizzle } from "drizzle-orm/d1";
 import { getPlatformProxy } from "wrangler";
-import { account, session, user } from "../../src/lib/server/db/auth.schema.ts";
 
 export const TEST_ORIGIN = "http://localhost:4173";
 export const TEST_SECRET = "condorcet-local-test-secret-32-characters";
@@ -40,9 +38,10 @@ export async function createE2EWranglerConfig(
       },
     ],
     vars: {
-      BETTER_AUTH_SECRET: TEST_SECRET,
-      GOOGLE_CLIENT_ID: "test-client",
-      GOOGLE_CLIENT_SECRET: "test-secret",
+      SESSION_SECRET: TEST_SECRET,
+      OIDC_ISSUER: "https://test.invalid/auth/v1",
+      OIDC_CLIENT_ID: "test-client",
+      OIDC_CLIENT_SECRET: "test-secret",
     },
     ...(options.worker
       ? {
@@ -178,65 +177,34 @@ function chunks<T>(values: readonly T[], size: number): T[][] {
   return result;
 }
 
-async function insertAuthUsers(
-  d1: D1Database,
-  fixtureUsers: { id: string; name: string; email: string }[],
-): Promise<void> {
-  const db = drizzle(d1, { schema: { user, account, session } });
-  const now = new Date();
-  for (const group of chunks(fixtureUsers, 10)) {
-    await db.insert(user).values(
-      group.map((fixture) => ({
-        id: fixture.id,
-        name: fixture.name,
-        email: fixture.email,
-        emailVerified: true,
-        image: null,
-        createdAt: now,
-        updatedAt: now,
-      })),
-    );
-    await db.insert(account).values(
-      group.map((fixture) => ({
-        id: `google-account-${fixture.id}`,
-        accountId: `google-${fixture.id}`,
-        providerId: "google",
-        userId: fixture.id,
-        createdAt: now,
-        updatedAt: now,
-      })),
-    );
-  }
-}
-
 async function insertParticipation(
   d1: D1Database,
-  rows: { userId: string; submittedAt: number }[],
+  rows: { voterId: string; submittedAt: number }[],
 ): Promise<void> {
   for (const group of chunks(rows, INSERT_CHUNK_SIZE)) {
     const values = group.map(() => "(?, ?, ?, ?)").join(", ");
-    const bindings = group.flatMap(({ userId, submittedAt }) => [
+    const bindings = group.flatMap(({ voterId, submittedAt }) => [
       ELECTION_ID,
-      userId,
+      voterId,
       submittedAt,
       submittedAt,
     ]);
     await d1
       .prepare(
-        `INSERT INTO election_participant (election_id, user_id, acknowledged_at, submitted_at) VALUES ${values}`,
+        `INSERT INTO election_participant (election_id, voter_id, acknowledged_at, submitted_at) VALUES ${values}`,
       )
       .bind(...bindings)
       .run();
   }
 }
 
-async function insertRankRows(d1: D1Database, userIds: string[]): Promise<void> {
-  for (const group of chunks(userIds, INSERT_CHUNK_SIZE)) {
+async function insertRankRows(d1: D1Database, voterIds: string[]): Promise<void> {
+  for (const group of chunks(voterIds, INSERT_CHUNK_SIZE)) {
     const values = group.map(() => "(?, ?, ?, 0)").join(", ");
-    const bindings = group.flatMap((userId) => [ELECTION_ID, userId, SEED_CANDIDATE_ID]);
+    const bindings = group.flatMap((voterId) => [ELECTION_ID, voterId, SEED_CANDIDATE_ID]);
     await d1
       .prepare(
-        `INSERT INTO ballot_rank (election_id, user_id, candidate_id, position) VALUES ${values}`,
+        `INSERT INTO ballot_rank (election_id, voter_id, candidate_id, position) VALUES ${values}`,
       )
       .bind(...bindings)
       .run();
@@ -253,86 +221,28 @@ export async function resetFixture(options: FixtureOptions = {}): Promise<void> 
   const proxy = await openProxy();
   try {
     // Child tables first; openProxy applies every migration or throws.
-    for (const table of [
-      "ballot_rank",
-      "election_participant",
-      "rate_limit",
-      "verification",
-      "session",
-      "account",
-      "user",
-    ]) {
+    for (const table of ["ballot_rank", "election_participant", "rate_limit", "verification"]) {
       await proxy.d1.prepare(`DELETE FROM ${table}`).run();
     }
-
-    const fixtureUsers = [
-      {
-        id: "test-voter",
-        name: "Synthetic Test Voter",
-        email: "test-voter@example.invalid",
-      },
-      {
-        id: "test-other",
-        name: "Synthetic Other Voter",
-        email: "test-other@example.invalid",
-      },
-      ...Array.from({ length: validCount }, (_, index) => ({
-        id: `test-valid-${String(index).padStart(5, "0")}`,
-        name: "Synthetic Valid Ballot",
-        email: `test-valid-${index}@example.invalid`,
-      })),
-      ...Array.from({ length: blankCount }, (_, index) => ({
-        id: `test-blank-${String(index).padStart(5, "0")}`,
-        name: "Synthetic Blank Ballot",
-        email: `test-blank-${index}@example.invalid`,
-      })),
-    ];
-    await insertAuthUsers(proxy.d1, fixtureUsers);
 
     if (validCount + blankCount > 0) {
       const now = Date.now();
       const submitted = [
         ...Array.from({ length: validCount }, (_, index) => ({
-          userId: `test-valid-${String(index).padStart(5, "0")}`,
+          voterId: `test-valid-${String(index).padStart(5, "0")}`,
           submittedAt: now,
         })),
         ...Array.from({ length: blankCount }, (_, index) => ({
-          userId: `test-blank-${String(index).padStart(5, "0")}`,
+          voterId: `test-blank-${String(index).padStart(5, "0")}`,
           submittedAt: now,
         })),
       ];
       await insertParticipation(proxy.d1, submitted);
       await insertRankRows(
         proxy.d1,
-        submitted.slice(0, validCount).map(({ userId }) => userId),
+        submitted.slice(0, validCount).map(({ voterId }) => voterId),
       );
     }
-  } finally {
-    await proxy.dispose();
-  }
-}
-
-export async function createFixtureSession(userId: "test-voter" | "test-other"): Promise<{
-  token: string;
-  expiresAt: Date;
-}> {
-  const proxy = await openE2ED1();
-  try {
-    const token = randomUUID();
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
-    const db = drizzle(proxy.d1, { schema: { user, account, session } });
-    await db.insert(session).values({
-      id: randomUUID(),
-      token,
-      expiresAt,
-      userId,
-      createdAt: now,
-      updatedAt: now,
-      ipAddress: null,
-      userAgent: null,
-    });
-    return { token, expiresAt };
   } finally {
     await proxy.dispose();
   }

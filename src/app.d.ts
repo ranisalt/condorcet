@@ -1,12 +1,10 @@
-import type { User, Session } from "better-auth";
-import type { createAuth } from "#lib/server/auth.ts";
+import type { VoterId } from "#lib/server/voter-session.ts";
 
 declare global {
   namespace App {
     interface Locals {
-      user?: User;
-      session?: Session;
-      auth: ReturnType<typeof createAuth>;
+      // Only the OIDC `sub` is kept; no provider profile data (email, name) is stored or exposed.
+      voter?: VoterId;
     }
   }
 }

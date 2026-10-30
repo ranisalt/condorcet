@@ -1,19 +1,23 @@
-import { createHmac } from "node:crypto";
 import type { BrowserContext } from "@playwright/test";
-import { createFixtureSession, TEST_ORIGIN, TEST_SECRET } from "./d1.ts";
+import {
+  sealPayload,
+  VOTER_SESSION_TTL_MS,
+  voterCookieName,
+} from "../../src/lib/server/voter-session.ts";
+import { TEST_ORIGIN, TEST_SECRET } from "./d1.ts";
 
 export async function signInFixture(
   context: BrowserContext,
-  userId: "test-voter" | "test-other",
+  voterId: "test-voter" | "test-other",
 ): Promise<void> {
-  const { token, expiresAt } = await createFixtureSession(userId);
-  const signature = createHmac("sha256", TEST_SECRET).update(token).digest("base64");
+  const exp = Date.now() + VOTER_SESSION_TTL_MS;
+  const value = await sealPayload({ sub: voterId, exp }, TEST_SECRET);
   await context.addCookies([
     {
-      name: "better-auth.session_token",
-      value: `${token}.${signature}`,
+      name: voterCookieName(false),
+      value,
       url: TEST_ORIGIN,
-      expires: Math.floor(expiresAt.getTime() / 1000),
+      expires: Math.floor(exp / 1000),
       httpOnly: true,
       secure: false,
       sameSite: "Lax",

@@ -33,8 +33,6 @@
     "@types/node": "^26.6.5",
     "@vitest/browser-playwright": "^5.0.4",
     "@vitest/coverage-v8": "5.0.4",
-    "auth": "^1.7.8",
-    "better-auth": "^1.7.8",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.4",
     "eslint": "^10.12.0",

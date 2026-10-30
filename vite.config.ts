@@ -52,9 +52,10 @@ export default defineConfig(({ mode }) => {
             },
           ],
           vars: {
-            BETTER_AUTH_SECRET: "condorcet-local-test-secret-32-characters",
-            GOOGLE_CLIENT_ID: "test-client",
-            GOOGLE_CLIENT_SECRET: "test-secret",
+            SESSION_SECRET: "condorcet-local-test-secret-32-characters",
+            OIDC_ISSUER: "https://test-project.supabase.co/auth/v1",
+            OIDC_CLIENT_ID: "test-client",
+            OIDC_CLIENT_SECRET: "test-secret",
           },
         },
         null,

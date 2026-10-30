@@ -6,18 +6,18 @@ import { acknowledgeElection, readParticipation } from "#lib/server/ballots.ts";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load = (async ({ locals }) => {
-  if (locals.user === undefined) redirect(303, "/");
+  if (locals.voter === undefined) redirect(303, "/");
   const election = currentElection;
   if (election === null) error(404, m.no_election());
 
-  const participation = await readParticipation(env.DB, election.id, locals.user.id);
+  const participation = await readParticipation(env.DB, election.id, locals.voter);
   if (participation !== null) redirect(303, "/ballot");
   return { election: { id: election.id, titleKey: election.titleKey } };
 }) satisfies PageServerLoad;
 
 export const actions = {
   default: async ({ locals, request }) => {
-    if (locals.user === undefined) redirect(303, "/");
+    if (locals.voter === undefined) redirect(303, "/");
     const election = currentElection;
     if (election === null) error(404, m.no_election());
 
@@ -33,7 +33,7 @@ export const actions = {
       return fail(400, { required: true });
     }
 
-    await acknowledgeElection(env.DB, election.id, locals.user.id, new Date());
+    await acknowledgeElection(env.DB, election.id, locals.voter, new Date());
     redirect(303, "/ballot");
   },
 } satisfies Actions;

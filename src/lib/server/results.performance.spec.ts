@@ -54,13 +54,6 @@ async function insertRows(
   return maxParameters;
 }
 
-function* userRows(count: number, now: number): Generator<BoundRow> {
-  for (let index = 0; index < count; index += 1) {
-    const id = `perf-voter-${index}`;
-    yield [id, `Synthetic ${index}`, `${id}@example.invalid`, 0, now, now];
-  }
-}
-
 function* participantRows(electionId: string, count: number, now: number): Generator<BoundRow> {
   for (let index = 0; index < count; index += 1) {
     yield [electionId, `perf-voter-${index}`, now, now];
@@ -83,25 +76,19 @@ performanceTest(
     try {
       const now = new Date("2026-10-15T12:00:00.000Z").getTime();
       const candidateIds = currentElection.candidates.map((candidate) => candidate.id);
-      const userParamCount = await insertRows(
-        d1,
-        "user",
-        ["id", "name", "email", "email_verified", "created_at", "updated_at"],
-        userRows(validBallots + blankBallots, now),
-      );
       const participantParamCount = await insertRows(
         d1,
         "election_participant",
-        ["election_id", "user_id", "acknowledged_at", "submitted_at"],
+        ["election_id", "voter_id", "acknowledged_at", "submitted_at"],
         participantRows(currentElection.id, validBallots + blankBallots, now),
       );
       const rankParamCount = await insertRows(
         d1,
         "ballot_rank",
-        ["election_id", "user_id", "candidate_id", "position"],
+        ["election_id", "voter_id", "candidate_id", "position"],
         rankRows(currentElection.id, candidateIds),
       );
-      expect(Math.max(userParamCount, participantParamCount, rankParamCount)).toBeLessThanOrEqual(
+      expect(Math.max(participantParamCount, rankParamCount)).toBeLessThanOrEqual(
         maxParametersPerStatement,
       );
 

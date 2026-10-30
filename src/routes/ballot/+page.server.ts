@@ -13,13 +13,14 @@ import type { BallotDraft, Election } from "#lib/election.ts";
 import { currentElection } from "#lib/server/election.ts";
 import { readOwnRanking, readParticipation, replaceBallot } from "#lib/server/ballots.ts";
 import type { Actions, PageServerLoad } from "./$types";
+import type { VoterId } from "#lib/server/voter-session.ts";
 
 type BallotActionError = "invalid" | "closed" | "stale" | "save";
 type PostGuard =
-  { election: Election; userId: string } | { error: Exclude<BallotActionError, "save"> };
+  { election: Election; voterId: VoterId } | { error: Exclude<BallotActionError, "save"> };
 
 async function guardBallotPost(locals: App.Locals, form: FormData): Promise<PostGuard> {
-  if (locals.user === undefined) redirect(303, "/");
+  if (locals.voter === undefined) redirect(303, "/");
   const election = currentElection;
   if (election === null) error(404, m.no_election());
 
@@ -29,11 +30,11 @@ async function guardBallotPost(locals: App.Locals, form: FormData): Promise<Post
   }
   if (electionIds[0] !== election.id) return { error: "stale" };
 
-  const participation = await readParticipation(env.DB, election.id, locals.user.id);
+  const participation = await readParticipation(env.DB, election.id, locals.voter);
   if (participation === null) redirect(303, "/acknowledgment");
   if (!isElectionOpen(election, new Date())) return { error: "closed" };
 
-  return { election, userId: locals.user.id };
+  return { election, voterId: locals.voter };
 }
 
 function errorResponse(reason: Exclude<BallotActionError, "save">) {
@@ -43,14 +44,14 @@ function errorResponse(reason: Exclude<BallotActionError, "save">) {
 }
 
 export const load = (async ({ locals }) => {
-  if (locals.user === undefined) redirect(303, "/");
+  if (locals.voter === undefined) redirect(303, "/");
   const election = currentElection;
   if (election === null) error(404, m.no_election());
 
-  const participation = await readParticipation(env.DB, election.id, locals.user.id);
+  const participation = await readParticipation(env.DB, election.id, locals.voter);
   if (participation === null) redirect(303, "/acknowledgment");
 
-  const ranked = await readOwnRanking(env.DB, election.id, locals.user.id);
+  const ranked = await readOwnRanking(env.DB, election.id, locals.voter);
   return {
     election,
     open: isElectionOpen(election, new Date()),
@@ -91,7 +92,7 @@ export const actions = {
     }
 
     try {
-      await replaceBallot(env.DB, guard.election.id, guard.userId, draft.ranked, new Date());
+      await replaceBallot(env.DB, guard.election.id, guard.voterId, draft.ranked, new Date());
     } catch {
       return fail(503, { error: "save", draft });
     }

@@ -1,6 +1,4 @@
 import { expect, it } from "vitest";
-import { getDb } from "./db/index.ts";
-import { user } from "./db/auth.schema.ts";
 import {
   acknowledgeElection,
   readElectionCounts,
@@ -13,24 +11,9 @@ import { openTestD1 } from "../../test/d1.ts";
 const firstTime = new Date("2026-10-15T12:00:00.000Z");
 const secondTime = new Date("2026-10-16T12:00:00.000Z");
 
-async function seedUser(d1: D1Database, id: string) {
-  await getDb(d1)
-    .insert(user)
-    .values({
-      id,
-      name: `User ${id}`,
-      email: `${id}@example.invalid`,
-      emailVerified: false,
-      createdAt: firstTime,
-      updatedAt: firstTime,
-    });
-}
-
 it("keeps acknowledgment separate and isolates participation and ordered rankings", async () => {
   const { d1, dispose } = await openTestD1();
   try {
-    await seedUser(d1, "voter-a");
-    await seedUser(d1, "voter-b");
     await acknowledgeElection(d1, "election-a", "voter-a", firstTime);
     await acknowledgeElection(d1, "election-a", "voter-a", secondTime);
     await acknowledgeElection(d1, "election-b", "voter-a", secondTime);
@@ -55,9 +38,6 @@ it("keeps acknowledgment separate and isolates participation and ordered ranking
 it("atomically replaces rankings, accepts empty submissions, rolls back errors, and handles races", async () => {
   const { d1, dispose } = await openTestD1();
   try {
-    await seedUser(d1, "voter-a");
-    await seedUser(d1, "voter-b");
-    await seedUser(d1, "voter-c");
     await acknowledgeElection(d1, "election-a", "voter-a", firstTime);
     await acknowledgeElection(d1, "election-a", "voter-b", firstTime);
     await acknowledgeElection(d1, "election-a", "voter-c", firstTime);
@@ -107,7 +87,7 @@ it("atomically replaces rankings, accepts empty submissions, rolls back errors, 
     expect([[], [87, 130, 94]]).toContainEqual(finalRanking);
     const participantCount = await d1
       .prepare(
-        "SELECT count(*) AS count FROM election_participant WHERE election_id = ? AND user_id = ?",
+        "SELECT count(*) AS count FROM election_participant WHERE election_id = ? AND voter_id = ?",
       )
       .bind("election-a", "voter-a")
       .all<{ count: number }>();
@@ -127,9 +107,6 @@ it("atomically replaces rankings, accepts empty submissions, rolls back errors, 
 it("counts submitted nonempty accounts once and separates blanks by election", async () => {
   const { d1, dispose } = await openTestD1();
   try {
-    for (const id of ["never", "ack-only", "empty", "valid", "changing", "other-election"]) {
-      await seedUser(d1, id);
-    }
     await acknowledgeElection(d1, "election-a", "ack-only", firstTime);
     await acknowledgeElection(d1, "election-a", "empty", firstTime);
     await acknowledgeElection(d1, "election-a", "valid", firstTime);

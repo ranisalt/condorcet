@@ -10,7 +10,7 @@ export const load = (async ({ locals, url }) => {
   const election = currentElection;
   if (election === null) error(404, m.no_election());
 
-  const view = await readResults(env.DB, election, locals.user?.id ?? null);
+  const view = await readResults(env.DB, election, locals.voter ?? null);
   if (view.state === "locked") {
     return {
       view: { ...view, election: { titleKey: election.titleKey } },
