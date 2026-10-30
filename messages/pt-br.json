@@ -19,6 +19,7 @@
   "flow_step_ballot": "Cédula",
   "flow_step_done": "concluída",
   "ballot_signed_out_login_heading": "Por que entrar com Google",
+  "ballot_signed_out_login_body": "O login usa apenas o Google, para dificultar votos repetidos. Isso não garante um voto por pessoa, porque uma pessoa pode ter várias contas. Não há cadastro com senha.",
   "ballot_signed_out_privacy_body": "Seu voto não é anônimo. O simulador guarda apenas um identificador aleatório junto com a cédula, sem e-mail nem nome.",
   "ballot_signed_out_heading": "Entre para montar sua cédula",
   "ballot_signed_out_body": "A cédula fica disponível depois do login e da leitura dos avisos de privacidade.",

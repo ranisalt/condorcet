@@ -55,7 +55,7 @@
     <div class="signin-facts">
       <section aria-labelledby="signin-login-heading">
         <h2 id="signin-login-heading">{m.ballot_signed_out_login_heading()}</h2>
-        <p>{m.login_explanation()}</p>
+        <p>{m.ballot_signed_out_login_body()}</p>
       </section>
       <section aria-labelledby="signin-privacy-heading">
         <h2 id="signin-privacy-heading">{m.privacy_heading()}</h2>
