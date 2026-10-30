@@ -111,5 +111,8 @@ O simulador guarda a cédula junto com o identificador aleatório, sem e-mail ne
 Não use este simulador se quiser manter suas preferências políticas em segredo.
 
 </section>
+
+[Ir para a minha cédula](/ballot)
+
 </article>
 

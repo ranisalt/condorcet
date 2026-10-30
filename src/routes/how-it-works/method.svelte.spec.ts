@@ -41,3 +41,12 @@ it("explains each service that handles data in the privacy section, linked by it
   expect(text).toMatch(/não é anônimo/);
   expect(text).toMatch(/identificador aleatório/);
 });
+
+it("links to the ballot page from the end of the article", async () => {
+  await render(MethodPage);
+
+  const link = page.getByRole("link", { name: "Ir para a minha cédula" });
+  await expect.element(link).toHaveAttribute("href", "/ballot");
+  const article = document.querySelector("article");
+  expect(article?.lastElementChild?.textContent).toContain("Ir para a minha cédula");
+});
