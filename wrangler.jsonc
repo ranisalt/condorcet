@@ -16,7 +16,15 @@
       "migrations_dir": "drizzle",
     },
   ],
-  "observability": { "enabled": true, "traces": { "enabled": true } },
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true,
+    },
+    "issues": {
+      "enabled": true,
+    },
+  },
   "workers_dev": true,
   "preview_urls": true,
 }
