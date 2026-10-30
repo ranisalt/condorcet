@@ -41,9 +41,24 @@ test("keeps the home hierarchy compact and the disclaimer only in the footer", a
 });
 
 test("stacks method explanations at desktop and mobile widths", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/how-it-works");
-  for (const paragraph of await page.getByRole("main").getByRole("paragraph").all()) {
-    await expect(paragraph).toHaveCSS("max-width", "none");
+  const main = page.getByRole("main");
+  const blocks = [
+    ...(await main.getByRole("paragraph").all()),
+    ...(await main.getByRole("list").all()),
+  ];
+  expect(blocks.length).toBeGreaterThan(10);
+  for (const block of blocks) {
+    const { width, limit } = await block.evaluate((element) => {
+      const probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;visibility:hidden;width:70ch";
+      element.appendChild(probe);
+      const limit = probe.getBoundingClientRect().width;
+      probe.remove();
+      return { width: element.getBoundingClientRect().width, limit };
+    });
+    expect(width, (await block.textContent()) ?? undefined).toBeLessThanOrEqual(limit + 0.5);
   }
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });

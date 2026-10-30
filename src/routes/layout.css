@@ -875,6 +875,10 @@ progress::-moz-progress-bar {
   color: var(--muted);
 }
 
+.education-page :is(p, ul, ol) {
+  max-width: 70ch;
+}
+
 .education-page .method-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
