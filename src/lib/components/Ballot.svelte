@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FlowSteps from "./FlowSteps.svelte";
   import { tick, untrack } from "svelte";
   import { enhance } from "$app/forms";
   import { m } from "#lib/paraglide/messages.js";
@@ -87,6 +88,7 @@
 </script>
 
 <div class="ballot-page">
+  <FlowSteps current={3} />
   <header class="page-heading">
     <p class="eyebrow">{m[election.titleKey]()}</p>
     <h1>{m.ballot_title()}</h1>

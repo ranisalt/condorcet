@@ -1,6 +1,7 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
   import Ballot from "#lib/components/Ballot.svelte";
+  import FlowSteps from "#lib/components/FlowSteps.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { PageProps } from "./$types";
 
@@ -30,24 +31,38 @@
 </svelte:head>
 
 {#if !data.signedIn}
-  <div class="ballot-page">
-    <header class="page-heading">
+  <div class="signin-page">
+    <FlowSteps current={1} />
+    <header class="signin-heading">
       <h1>{m.ballot_signed_out_heading()}</h1>
       <p>{m.ballot_signed_out_body()}</p>
     </header>
     <form method="POST" action="/?/login">
-      <button type="submit" class="button button--primary">{m.sign_in()}</button>
+      <button type="submit" class="button button--primary button--large">
+        {m.sign_in()}
+        <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"
+          ><path
+            d="M3 8h10M9 4l4 4-4 4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          /></svg
+        >
+      </button>
     </form>
-    <section class="notice-card" aria-labelledby="ballot-steps-heading">
-      <h2 id="ballot-steps-heading">{m.ballot_steps_heading()}</h2>
-      <ol>
-        <li>{m.ballot_step_sign_in()}</li>
-        <li>{m.ballot_step_acknowledge()}</li>
-        <li>{m.ballot_step_rank()}</li>
-      </ol>
-      <p>{m.login_explanation()}</p>
-      <p><a href="{resolve('how-it-works')}#privacidade">{m.home_privacy_link()}</a></p>
-    </section>
+    <div class="signin-facts">
+      <section aria-labelledby="signin-login-heading">
+        <h2 id="signin-login-heading">{m.ballot_signed_out_login_heading()}</h2>
+        <p>{m.login_explanation()}</p>
+      </section>
+      <section aria-labelledby="signin-privacy-heading">
+        <h2 id="signin-privacy-heading">{m.privacy_heading()}</h2>
+        <p>{m.ballot_signed_out_privacy_body()}</p>
+        <p><a href="{resolve('how-it-works')}#privacidade">{m.home_privacy_link()}</a></p>
+      </section>
+    </div>
   </div>
 {:else if initialDraft !== null}
   {#key initialDraft}

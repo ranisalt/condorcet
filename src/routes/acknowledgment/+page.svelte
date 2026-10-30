@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import FlowSteps from "#lib/components/FlowSteps.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { PageProps } from "./$types";
 
@@ -11,6 +12,7 @@
 </svelte:head>
 
 <div class="acknowledgment-page">
+  <FlowSteps current={2} />
   <header class="page-heading">
     <p class="eyebrow">{m[data.election.titleKey]()}</p>
     <h1>{m.ack_title()}</h1>

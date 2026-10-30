@@ -46,7 +46,7 @@ test("stacks method explanations at desktop and mobile widths", async ({ page })
   const main = page.getByRole("main");
   const blocks = [
     ...(await main.getByRole("paragraph").all()),
-    ...(await main.getByRole("list").all()),
+    ...(await main.getByRole("listitem").all()),
   ];
   expect(blocks.length).toBeGreaterThan(10);
   for (const block of blocks) {
