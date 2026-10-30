@@ -11,7 +11,9 @@ test("protects the ballot HTML and data request until this account acknowledges"
   context,
 }) => {
   await page.goto("/ballot");
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/ballot$/);
+  await expect(page.getByRole("button", { name: "Entrar com Google" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enviar meu voto" })).toHaveCount(0);
 
   await signInFixture(context, "test-voter");
   await page.goto("/ballot");

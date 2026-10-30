@@ -1,4 +1,4 @@
-import { fail, redirect } from "@sveltejs/kit";
+import { error, fail, redirect } from "@sveltejs/kit";
 import { env } from "cloudflare:workers";
 import {
   editDraft,
@@ -9,7 +9,9 @@ import {
   shuffle,
 } from "#lib/election.ts";
 import type { BallotDraft } from "#lib/election.ts";
+import { m } from "#lib/paraglide/messages.js";
 import { readOwnRanking, replaceBallot } from "#lib/server/ballots.ts";
+import { currentElection } from "#lib/server/election.ts";
 import { enterStep, type JourneyEntry } from "#lib/server/participation.ts";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -32,6 +34,12 @@ function errorResponse(reason: GuardError) {
 }
 
 export const load = (async ({ locals }) => {
+  if (locals.voter === undefined) {
+    const election = currentElection;
+    if (election === null) error(404, m.no_election());
+    return { election, open: isElectionOpen(election, new Date()), draft: null };
+  }
+
   const { election, voterId } = await enterStep(locals, "ballot");
 
   const ranked = await readOwnRanking(env.DB, election.id, voterId);
