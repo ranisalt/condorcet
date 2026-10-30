@@ -26,10 +26,7 @@
     },
   },
   "secrets": {
-    "required": [
-      "OIDC_CLIENT_SECRET",
-      "SESSION_SECRET",
-    ],
+    "required": ["OIDC_CLIENT_SECRET", "SESSION_SECRET"],
   },
   "workers_dev": true,
   "preview_urls": true,
