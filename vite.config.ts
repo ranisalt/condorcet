@@ -109,14 +109,17 @@ export default defineConfig(({ mode }) => {
         outdir: "./src/lib/paraglide",
         emitTsDeclarations: true,
       }),
-      // Uploads source maps to Sentry (needs SENTRY_ORG and SENTRY_PROJECT too). Without a token
-      // the maps would be left in the public assets, so the plugin stays off.
-      process.env.SENTRY_AUTH_TOKEN && !process.env.VITEST
-        ? sentrySvelteKit({
+      // Always on: it also swaps the SDK's tracing for the $app/state variant, without which the
+      // client imports $app/stores and throws on SvelteKit 3. Source map upload (needs
+      // SENTRY_ORG and SENTRY_PROJECT too) runs only with a token, since without one the maps
+      // would be left in the public assets.
+      process.env.VITEST
+        ? null
+        : sentrySvelteKit({
             telemetry: false,
+            autoUploadSourceMaps: Boolean(process.env.SENTRY_AUTH_TOKEN),
             sourcemaps: { filesToDeleteAfterUpload: [".svelte-kit/cloudflare/**/*.map"] },
-          })
-        : null,
+          }),
     ],
     test: {
       expect: { requireAssertions: true },
