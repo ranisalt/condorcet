@@ -2,7 +2,6 @@ import type { Cookies } from "@sveltejs/kit";
 import {
   base64UrlDecode,
   base64UrlEncode,
-  hmacKey,
   isRecord,
   openPayload,
   sealPayload,
@@ -22,16 +21,20 @@ export class LoginError extends Error {
 }
 
 export type OidcConfig = {
+  /** Supabase OAuth server issuer, e.g. https://<ref>.supabase.co/auth/v1 */
   issuer: string;
   clientId: string;
+  /** Confidential client secret, sent via client_secret_basic at the token endpoint. */
   clientSecret: string;
   redirectUri: string;
   secret: string;
   secure: boolean;
 };
 
-const AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
-const TOKEN_PATH = "/api/auth/oauth2/token";
+// Paths are relative to the issuer (Supabase OAuth 2.1 server).
+const AUTHORIZE_PATH = "/oauth/authorize";
+const TOKEN_PATH = "/oauth/token";
+const JWKS_PATH = "/.well-known/jwks.json";
 const TRANSACTION_TTL_MS = 600_000;
 const TRANSACTION_COOKIE = "oidc_tx";
 const encoder = new TextEncoder();
@@ -110,7 +113,7 @@ export async function completeLogin(
   if (!code) throw new LoginError("provider");
 
   const idToken = await exchangeCode(config, code, transaction.verifier, fetchFn);
-  const claims = await verifyIdToken(idToken, config, transaction.nonce, now);
+  const claims = await verifyIdToken(idToken, config, transaction.nonce, fetchFn, now);
   return claims.sub as VoterId;
 }
 
@@ -163,29 +166,74 @@ function decodeJsonSegment(segment: string): Record<string, unknown> | null {
   }
 }
 
+async function fetchSigningKey(
+  config: OidcConfig,
+  kid: string,
+  fetchFn: typeof fetch,
+): Promise<{ kty: "EC"; crv: "P-256"; x: string; y: string; ext: true }> {
+  let response: Response;
+  try {
+    response = await fetchFn(`${normalizedIssuer(config.issuer)}${JWKS_PATH}`, {
+      headers: { accept: "application/json" },
+    });
+  } catch {
+    throw new LoginError("provider");
+  }
+  if (!response.ok) throw new LoginError("provider");
+
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    throw new LoginError("provider");
+  }
+  if (!isRecord(json) || !Array.isArray(json.keys)) throw new LoginError("provider");
+
+  const match: unknown = json.keys.find((key: unknown) => isRecord(key) && key.kid === kid);
+  if (!isRecord(match) || match.kty !== "EC" || match.crv !== "P-256") {
+    throw new LoginError("token");
+  }
+  if (typeof match.x !== "string" || typeof match.y !== "string") throw new LoginError("token");
+  return { kty: "EC", crv: "P-256", x: match.x, y: match.y, ext: true };
+}
+
 async function verifyIdToken(
   token: string,
   config: OidcConfig,
   expectedNonce: string,
+  fetchFn: typeof fetch,
   now: Date,
 ): Promise<Record<string, unknown> & { sub: string }> {
   const parts = token.split(".");
   if (parts.length !== 3) throw new LoginError("token");
   const [headerSegment, payloadSegment, signatureSegment] = parts as [string, string, string];
 
-  // Pin HS256: rejects `none` and any other algorithm before the signature is considered.
+  // Pin ES256: rejects `none`, HS256 and every other algorithm before any key is fetched.
   const header = decodeJsonSegment(headerSegment);
-  if (!header || header.alg !== "HS256") throw new LoginError("token");
+  if (!header || header.alg !== "ES256" || typeof header.kid !== "string") {
+    throw new LoginError("token");
+  }
 
+  // JWS ES256 signatures are raw r||s, 64 bytes, which is what WebCrypto ECDSA expects.
   let signature: Uint8Array<ArrayBuffer>;
   try {
     signature = base64UrlDecode(signatureSegment);
   } catch {
     throw new LoginError("token");
   }
-  const key = await hmacKey(config.clientSecret, "verify");
+  if (signature.length !== 64) throw new LoginError("token");
+
+  const jwk = await fetchSigningKey(config, header.kid, fetchFn);
+  let key: CryptoKey;
+  try {
+    key = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, [
+      "verify",
+    ]);
+  } catch {
+    throw new LoginError("token");
+  }
   const signed = await crypto.subtle.verify(
-    "HMAC",
+    { name: "ECDSA", hash: "SHA-256" },
     key,
     signature,
     encoder.encode(`${headerSegment}.${payloadSegment}`),
