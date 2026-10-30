@@ -52,6 +52,10 @@ function randomToken(): string {
   return base64UrlEncode(crypto.getRandomValues(new Uint8Array(32)));
 }
 
+export function supabaseIssuer(projectUrl: string): string {
+  return `${projectUrl.replace(/\/$/, "")}/auth/v1`;
+}
+
 export async function beginLogin(config: OidcConfig, cookies: Cookies, now: Date): Promise<URL> {
   const state = randomToken();
   const nonce = randomToken();

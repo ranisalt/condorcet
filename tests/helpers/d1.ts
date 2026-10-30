@@ -39,8 +39,6 @@ export async function createE2EWranglerConfig(
     ],
     vars: {
       SESSION_SECRET: TEST_SECRET,
-      OIDC_ISSUER: "https://test.invalid/auth/v1",
-      OIDC_CLIENT_ID: "test-client",
       OIDC_CLIENT_SECRET: "test-secret",
     },
     ...(options.worker

@@ -24,12 +24,13 @@ export const variables = defineEnvVars({
     description:
       "HMAC secret that signs the voter session cookie. Use at least 32 characters with high entropy.",
   },
-  OIDC_ISSUER: {
-    description:
-      "Supabase OAuth 2.1 issuer, e.g. https://<project-ref>.supabase.co/auth/v1. Must match the token issuer.",
-  },
   OIDC_CLIENT_ID: {
+    static: true,
     description: "OAuth client ID registered with the Supabase OAuth server for this app.",
+    schema: (value) => {
+      if (typeof value !== "string" || value === "") throw new Error("OIDC_CLIENT_ID is required");
+      return value;
+    },
   },
   OIDC_CLIENT_SECRET: {
     description: "OAuth client secret registered with the Supabase OAuth server for this app.",

@@ -1,7 +1,7 @@
 import type { Cookies } from "@sveltejs/kit";
 import { createHash, createHmac } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
-import { LoginError, beginLogin, completeLogin, type OidcConfig } from "./oidc.ts";
+import { LoginError, beginLogin, completeLogin, supabaseIssuer, type OidcConfig } from "./oidc.ts";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
 const TX_TTL_MS = 10 * 60 * 1000;
@@ -499,5 +499,15 @@ describe("completeLogin", () => {
       expect(String((error as Error).message)).not.toContain(EMAIL);
       expect(String((error as Error).stack ?? "")).not.toContain(EMAIL);
     });
+  });
+});
+
+describe("supabaseIssuer", () => {
+  it("appends the auth path to the project URL", () => {
+    expect(supabaseIssuer("https://hmfxwknrxbmtfvhlvnya.supabase.co")).toBe(ISSUER);
+  });
+
+  it("ignores a trailing slash on the project URL", () => {
+    expect(supabaseIssuer("https://hmfxwknrxbmtfvhlvnya.supabase.co/")).toBe(ISSUER);
   });
 });
