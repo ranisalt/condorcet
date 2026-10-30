@@ -80,7 +80,6 @@
   "progress_remaining": "Faltam {count} votos válidos para alcançar o mínimo.",
   "progress_met_notice": "O mínimo de participação foi alcançado.",
   "progress_locked_title": "Acesso aos resultados",
-  "progress_locked_body": "Os resultados aparecem depois do mínimo de votos válidos, somente para quem já enviou uma cédula. Envie suas preferências para consultar as comparações.",
   "progress_label": "Participação em relação ao mínimo de {threshold} votos válidos",
   "home_steps_title": "Etapas da simulação",
   "home_step_one_title": "Leia os avisos antes de votar",

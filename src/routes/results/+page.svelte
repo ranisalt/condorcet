@@ -25,13 +25,11 @@
       {data.view.reason === "not-submitted"
         ? m.results_not_submitted()
         : data.view.threshold === null
-          ? m.progress_threshold_pending()
+          ? m.results_threshold_pending()
           : m.results_below_threshold()}
     </p>
     <p>{m.valid_participation({ count: number.format(data.view.validCount) })}</p>
-    {#if data.view.threshold === null}
-      <p>{m.results_threshold_pending()}</p>
-    {:else}
+    {#if data.view.threshold !== null}
       <progress
         max={data.view.threshold}
         value={Math.min(data.view.validCount, data.view.threshold)}

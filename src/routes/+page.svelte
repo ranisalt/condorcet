@@ -131,7 +131,6 @@
       </div>
       <aside class="progress-explanation">
         <h3>{m.progress_locked_title()}</h3>
-        <p>{m.progress_locked_body()}</p>
         <p>
           {threshold === null
             ? m.results_threshold_pending()
