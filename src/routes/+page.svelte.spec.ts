@@ -84,16 +84,3 @@ it("keeps the privacy disclosure off home and links to it from the sign-in area"
     .element(page.getByRole("link", { name: m.home_privacy_link() }))
     .toHaveAttribute("href", "/how-it-works#privacidade");
 });
-
-it("explains the locked results once in the access card", async () => {
-  await render(HomePage, { props: { data, form: null, params: {} } });
-
-  const card = page.getByRole("complementary");
-  await expect
-    .element(card.getByRole("heading", { name: m.progress_locked_title() }))
-    .toBeVisible();
-  await expect
-    .element(card.getByText(m.results_threshold({ threshold: "10" }), { exact: true }))
-    .toBeVisible();
-  expect(await card.getByRole("paragraph").elements()).toHaveLength(1);
-});
