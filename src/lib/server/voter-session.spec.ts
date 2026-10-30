@@ -1,12 +1,6 @@
 import type { Cookies } from "@sveltejs/kit";
 import { describe, expect, it } from "vitest";
-import {
-  VOTER_SESSION_TTL_MS,
-  clearVoter,
-  readVoter,
-  writeVoter,
-  type VoterId,
-} from "./voter-session.ts";
+import { clearVoter, readVoter, writeVoter, type VoterId } from "./voter-session.ts";
 
 const SECRET = "test-session-secret-with-enough-length";
 const NOW = new Date("2026-10-15T12:00:00.000Z");
@@ -77,12 +71,13 @@ describe("voter session cookie", () => {
     expect(await readVoter(cookies, "another-secret-with-enough-length-1", NOW)).toBeNull();
   });
 
-  it("rejects an expired cookie", async () => {
+  it("keeps the voter signed in for exactly one day", async () => {
     const { name, value } = await issuedValue();
-    const later = new Date(NOW.getTime() + VOTER_SESSION_TTL_MS);
     const { cookies } = fakeCookies();
     cookies.set(name, value, {});
-    expect(await readVoter(cookies, SECRET, later)).toBeNull();
+    const oneDay = 24 * 60 * 60 * 1000;
+    expect(await readVoter(cookies, SECRET, new Date(NOW.getTime() + oneDay - 1))).not.toBeNull();
+    expect(await readVoter(cookies, SECRET, new Date(NOW.getTime() + oneDay))).toBeNull();
   });
 
   it.each(["", "a", "a.b.c", "!!!.***", "%%%"])(

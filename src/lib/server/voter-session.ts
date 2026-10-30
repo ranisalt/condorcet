@@ -2,7 +2,7 @@ import type { Cookies } from "@sveltejs/kit";
 
 export type VoterId = string & { readonly __brand: "VoterId" };
 
-export const VOTER_SESSION_TTL_MS = 604_800_000;
+export const VOTER_SESSION_TTL_MS = 86_400_000;
 
 const VOTER_COOKIE = "voter";
 const encoder = new TextEncoder();
