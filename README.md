@@ -74,7 +74,7 @@ The all-zero database ID in `wrangler.jsonc` only works locally. Local migration
 ### Supabase project
 
 1. Enable the **OAuth 2.1 server** and set the authorization path to `/oauth/consent`.
-2. Set the **Site URL** to the app origin. The consent page lives there, so it is `http://localhost:5173` for local work.
+2. Set the **Site URL** to the deployed origin, e.g. `https://condorcet.rsa.sh`. Supabase sends every authorization request to `<Site URL>/oauth/consent`, so local sign-ins also approve on the deployed consent page before returning to the local callback. For a fully local flow, use a separate Supabase project.
 3. Register a **confidential** OAuth client with redirect URIs `https://<your-domain>/auth/callback` and `http://localhost:5173/auth/callback`. Use `client_secret_basic` authentication.
 4. Enable the **Google** provider and disable the others (email/password included).
 5. Install the hook above and enable it under **Auth → Hooks → Customize Access Token**.
