@@ -19,8 +19,7 @@
     "db:push": "wrangler d1 migrations apply DB --local",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply DB --local",
-    "db:studio": "drizzle-kit studio",
-    "auth:schema": "auth generate --config auth.schema.config.ts --adapter drizzle --dialect sqlite --output src/lib/server/db/auth.schema.ts --yes"
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
