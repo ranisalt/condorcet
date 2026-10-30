@@ -1,12 +1,16 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import Ballot from "#lib/components/Ballot.svelte";
-  import CandidateTicket from "#lib/components/CandidateTicket.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { PageProps } from "./$types";
 
   let { data, form }: PageProps = $props();
   const initialDraft = $derived(
-    form !== null && "draft" in form ? (form.draft ?? data.draft) : data.draft,
+    !data.signedIn
+      ? null
+      : form !== null && "draft" in form
+        ? (form.draft ?? data.draft)
+        : data.draft,
   );
   const error = $derived(
     form !== null &&
@@ -25,26 +29,27 @@
   <title>{m.ballot_title()} · {m.app_title()}</title>
 </svelte:head>
 
-{#if initialDraft === null}
-  <section class="readonly-roster">
-    <p class="eyebrow">{m[data.election.titleKey]()}</p>
-    <h1>{m.ballot_title()}</h1>
-    {#if data.open}
-      <h2>{m.ballot_signed_out_heading()}</h2>
+{#if !data.signedIn}
+  <div class="ballot-page">
+    <header class="page-heading">
+      <h1>{m.ballot_signed_out_heading()}</h1>
       <p>{m.ballot_signed_out_body()}</p>
-      <form method="POST" action="/?/login">
-        <button type="submit" class="button button--primary">{m.sign_in()}</button>
-      </form>
-    {:else}
-      <p role="status">{m.ballot_signed_out_closed()}</p>
-    {/if}
-    <ul aria-label={m.ballot_title()}>
-      {#each data.election.candidates as candidate (candidate.id)}
-        <li><CandidateTicket {candidate} /></li>
-      {/each}
-    </ul>
-  </section>
-{:else}
+    </header>
+    <form method="POST" action="/?/login">
+      <button type="submit" class="button button--primary">{m.sign_in()}</button>
+    </form>
+    <section class="notice-card" aria-labelledby="ballot-steps-heading">
+      <h2 id="ballot-steps-heading">{m.ballot_steps_heading()}</h2>
+      <ol>
+        <li>{m.ballot_step_sign_in()}</li>
+        <li>{m.ballot_step_acknowledge()}</li>
+        <li>{m.ballot_step_rank()}</li>
+      </ol>
+      <p>{m.login_explanation()}</p>
+      <p><a href="{resolve('how-it-works')}#privacidade">{m.home_privacy_link()}</a></p>
+    </section>
+  </div>
+{:else if initialDraft !== null}
   {#key initialDraft}
     <Ballot election={data.election} {initialDraft} open={data.open} {error} {unsaved} />
   {/key}

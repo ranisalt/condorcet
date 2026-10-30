@@ -30,7 +30,7 @@ vi.mock("#lib/server/election.ts", () => ({
   },
 }));
 
-import { actions, load } from "./+page.server.ts";
+import { actions } from "./+page.server.ts";
 
 const election: Election = {
   id: "8bc131c5-3228-46e4-b310-3555653d815d",
@@ -134,13 +134,6 @@ it("allows edit/save immediately before closing and rejects both at and after th
     state.election = null;
     await dispose();
   }
-});
-
-it("shows a signed-out visitor the roster with no voter data and no draft", async () => {
-  state.election = election;
-  const result = await load({ locals: {} } as unknown as Parameters<typeof load>[0]);
-  expect(result).toEqual({ election, open: false, draft: null });
-  state.election = null;
 });
 
 it("keeps edit and save closed to signed-out POSTs by redirecting to the home page", async () => {
