@@ -18,6 +18,9 @@ it("provides a skip link, labeled primary navigation, and a single main landmark
   await expect.element(footer.getByText(m.simulation_warning())).toBeInTheDocument();
   await expect.element(footer.getByText(m.study_notice_title())).not.toBeInTheDocument();
   await expect
+    .element(footer.getByRole("link", { name: m.source_code() }))
+    .toHaveAttribute("href", "https://github.com/ranisalt/condorcet");
+  await expect
     .element(page.getByRole("link", { name: m.nav_method() }))
     .toHaveAttribute("href", "/how-it-works");
 });
