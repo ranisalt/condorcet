@@ -1,7 +1,10 @@
 import { building } from "$app/env";
 import { defineEnvVars } from "@sveltejs/kit/env";
 
-/** Runtime secrets are absent while building; skip validation then, require them at startup. */
+/**
+ * Validates a secret that only exists in the Worker runtime. The build environment does not have
+ * it, so validation is skipped while building. The app fails to start if the secret is missing.
+ */
 function runtimeSecret(name: string) {
   return (value: string | undefined): string => {
     if (building) return value ?? "";
