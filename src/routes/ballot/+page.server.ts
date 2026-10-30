@@ -1,6 +1,5 @@
-import { error, fail, redirect } from "@sveltejs/kit";
+import { fail, redirect } from "@sveltejs/kit";
 import { env } from "cloudflare:workers";
-import { m } from "#lib/paraglide/messages.js";
 import {
   editDraft,
   InvalidBallotError,
@@ -9,49 +8,33 @@ import {
   parseDraftEdit,
   shuffle,
 } from "#lib/election.ts";
-import type { BallotDraft, Election } from "#lib/election.ts";
-import { currentElection } from "#lib/server/election.ts";
-import { readOwnRanking, readParticipation, replaceBallot } from "#lib/server/ballots.ts";
+import type { BallotDraft } from "#lib/election.ts";
+import { readOwnRanking, replaceBallot } from "#lib/server/ballots.ts";
+import { enterStep, type JourneyEntry } from "#lib/server/participation.ts";
 import type { Actions, PageServerLoad } from "./$types";
-import type { VoterId } from "#lib/server/voter-session.ts";
 
-type BallotActionError = "invalid" | "closed" | "stale" | "save";
-type PostGuard =
-  { election: Election; voterId: VoterId } | { error: Exclude<BallotActionError, "save"> };
+type GuardError = "invalid" | "closed" | "stale";
 
-async function guardBallotPost(locals: App.Locals, form: FormData): Promise<PostGuard> {
-  if (locals.voter === undefined) redirect(303, "/");
-  const election = currentElection;
-  if (election === null) error(404, m.no_election());
-
-  const electionIds = form.getAll("electionId");
-  if (electionIds.length !== 1 || typeof electionIds[0] !== "string") {
-    return { error: "invalid" };
-  }
-  if (electionIds[0] !== election.id) return { error: "stale" };
-
-  const participation = await readParticipation(env.DB, election.id, locals.voter);
-  if (participation === null) redirect(303, "/acknowledgment");
-  if (!isElectionOpen(election, new Date())) return { error: "closed" };
-
-  return { election, voterId: locals.voter };
+async function guardBallotPost(
+  locals: App.Locals,
+  form: FormData,
+): Promise<JourneyEntry | { error: GuardError }> {
+  const entry = await enterStep(locals, "ballot", form.getAll("electionId"));
+  if ("error" in entry) return entry;
+  if (!isElectionOpen(entry.election, new Date())) return { error: "closed" };
+  return entry;
 }
 
-function errorResponse(reason: Exclude<BallotActionError, "save">) {
+function errorResponse(reason: GuardError) {
   if (reason === "stale") return fail(409, { error: "stale" });
   if (reason === "closed") return fail(403, { error: "closed" });
   return fail(400, { error: "invalid" });
 }
 
 export const load = (async ({ locals }) => {
-  if (locals.voter === undefined) redirect(303, "/");
-  const election = currentElection;
-  if (election === null) error(404, m.no_election());
+  const { election, voterId } = await enterStep(locals, "ballot");
 
-  const participation = await readParticipation(env.DB, election.id, locals.voter);
-  if (participation === null) redirect(303, "/acknowledgment");
-
-  const ranked = await readOwnRanking(env.DB, election.id, locals.voter);
+  const ranked = await readOwnRanking(env.DB, election.id, voterId);
   return {
     election,
     open: isElectionOpen(election, new Date()),
