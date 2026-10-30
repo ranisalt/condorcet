@@ -55,7 +55,7 @@ test("rejects unchecked consent and does not create a submission", async ({ page
   try {
     const participant = await database.d1
       .prepare(
-        "SELECT acknowledged_at, submitted_at FROM election_participant WHERE election_id = ? AND user_id = ?",
+        "SELECT acknowledged_at, submitted_at FROM election_participant WHERE election_id = ? AND voter_id = ?",
       )
       .bind("8bc131c5-3228-46e4-b310-3555653d815d", "test-voter")
       .first<{ acknowledged_at: number; submitted_at: number | null }>();

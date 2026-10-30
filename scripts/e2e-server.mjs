@@ -4,18 +4,26 @@ import { createE2EWranglerConfig, initializeE2ED1, TEST_SECRET } from "../tests/
 
 const root = process.cwd();
 const preview = process.env.E2E_PREVIEW === "1";
-const secret = TEST_SECRET;
-const syntheticAuthEnv = {
-  BETTER_AUTH_SECRET: secret,
-  GOOGLE_CLIENT_ID: "test-client",
-  GOOGLE_CLIENT_SECRET: "test-secret",
+// Build-time (static) values.
+const staticEnv = {
+  PUBLIC_SUPABASE_URL: "https://test-project.supabase.co",
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
+  OIDC_CLIENT_ID: "test-client",
+};
+// The built Worker reads runtime secrets from the generated wrangler config, but
+// `vite dev` reads them through vite.loadEnv, where process.env wins over the
+// project's real .env. Set them here so dev never picks up real secrets.
+const runtimeEnv = {
+  SESSION_SECRET: TEST_SECRET,
+  OIDC_CLIENT_SECRET: "test-secret",
 };
 const childEnv = {
   PATH: process.env.PATH ?? "",
   HOME: process.env.HOME ?? "",
   TMPDIR: process.env.TMPDIR ?? "",
   CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: "false",
-  ...syntheticAuthEnv,
+  ...staticEnv,
+  ...runtimeEnv,
 };
 
 let config;
@@ -41,7 +49,6 @@ try {
         ".wrangler/e2e",
         "--env-file",
         "/dev/null",
-        ...Object.entries(syntheticAuthEnv).flatMap(([key, value]) => ["--var", `${key}:${value}`]),
       ]
     : [
         "exec",

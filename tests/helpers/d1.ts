@@ -219,7 +219,7 @@ export async function resetFixture(options: FixtureOptions = {}): Promise<void> 
   const proxy = await openProxy();
   try {
     // Child tables first; openProxy applies every migration or throws.
-    for (const table of ["ballot_rank", "election_participant", "rate_limit", "verification"]) {
+    for (const table of ["ballot_rank", "election_participant"]) {
       await proxy.d1.prepare(`DELETE FROM ${table}`).run();
     }
 

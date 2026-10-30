@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openE2ED1, resetFixture, TEST_ORIGIN } from "./helpers/d1.ts";
+import { resetFixture, TEST_ORIGIN } from "./helpers/d1.ts";
 import { signInFixture } from "./helpers/session.ts";
 
 test.beforeEach(async () => {
@@ -39,7 +39,7 @@ test("shows ballot and logout entry controls for a signed-in account", async ({
 });
 
 for (const origin of [TEST_ORIGIN, "http://127.0.0.1:4173"]) {
-  test(`starts Google OAuth on the request origin ${origin} with a state cookie`, async ({
+  test(`starts Supabase OIDC on the request origin ${origin} with a transaction cookie`, async ({
     request,
   }) => {
     const response = await request.post("/?/login", {
@@ -57,28 +57,24 @@ for (const origin of [TEST_ORIGIN, "http://127.0.0.1:4173"]) {
     const location = response.headers().location;
     expect(location).toBeDefined();
     const providerUrl = new URL(location ?? "", TEST_ORIGIN);
-    expect(providerUrl.hostname).toBe("accounts.google.com");
-    expect(providerUrl.searchParams.get("redirect_uri")).toBe(`${origin}/api/auth/callback/google`);
+    expect(`${providerUrl.origin}${providerUrl.pathname}`).toBe(
+      "https://test-project.supabase.co/auth/v1/oauth/authorize",
+    );
+    expect(providerUrl.searchParams.get("client_id")).toBe("test-client");
+    expect(providerUrl.searchParams.get("redirect_uri")).toBe(`${origin}/auth/callback`);
     expect(providerUrl.searchParams.get("state")).toBeTruthy();
-    expect(response.headers()["set-cookie"]).toContain("better-auth.state");
-
-    const database = await openE2ED1();
-    try {
-      const users = await database.d1
-        .prepare("SELECT count(*) AS count FROM user")
-        .first<{ count: number }>();
-      expect(users?.count).toBe(2);
-    } finally {
-      await database.dispose();
-    }
+    expect(providerUrl.searchParams.get("nonce")).toBeTruthy();
+    expect(providerUrl.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(response.headers()["set-cookie"]).toContain("oidc_tx=");
   });
 }
 
-test("rejects cross-origin authentication requests carrying a session", async ({ context }) => {
-  await signInFixture(context, "test-voter");
-  const response = await context.request.post("/api/auth/sign-in/social", {
-    headers: { Origin: "https://untrusted.example.invalid" },
-    data: { provider: "google", callbackURL: "/ballot" },
+test("rejects cross-origin login form posts", async ({ request }) => {
+  // SvelteKit only enforces its CSRF origin check outside dev.
+  test.skip(process.env.E2E_PREVIEW !== "1", "CSRF checks are disabled by vite dev");
+  const response = await request.post("/?/login", {
+    form: {},
+    headers: { Accept: "text/html", Origin: "https://untrusted.example.invalid" },
     maxRedirects: 0,
   });
 

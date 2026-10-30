@@ -18,13 +18,13 @@ async function readOwnRows(userId = "test-voter") {
   try {
     const ranks = await database.d1
       .prepare(
-        "SELECT candidate_id, position FROM ballot_rank WHERE election_id = ? AND user_id = ? ORDER BY position",
+        "SELECT candidate_id, position FROM ballot_rank WHERE election_id = ? AND voter_id = ? ORDER BY position",
       )
       .bind(electionId, userId)
       .all<{ candidate_id: number; position: number }>();
     const participation = await database.d1
       .prepare(
-        "SELECT submitted_at FROM election_participant WHERE election_id = ? AND user_id = ?",
+        "SELECT submitted_at FROM election_participant WHERE election_id = ? AND voter_id = ?",
       )
       .bind(electionId, userId)
       .first<{ submitted_at: number | null }>();
@@ -81,7 +81,7 @@ test("saves ordered replacements, confirms blank submissions, and preserves elig
     expect(
       await counts.d1
         .prepare(
-          "SELECT count(*) AS count FROM election_participant p WHERE p.election_id = ? AND p.submitted_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ballot_rank r WHERE r.election_id = p.election_id AND r.user_id = p.user_id)",
+          "SELECT count(*) AS count FROM election_participant p WHERE p.election_id = ? AND p.submitted_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ballot_rank r WHERE r.election_id = p.election_id AND r.voter_id = p.voter_id)",
         )
         .bind(electionId)
         .first<{ count: number }>(),

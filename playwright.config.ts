@@ -12,7 +12,7 @@ export default defineConfig({
   },
   webServer: {
     command: "node scripts/e2e-server.mjs",
-    url: `${TEST_ORIGIN}/api/auth/ok`,
+    url: TEST_ORIGIN,
     reuseExistingServer: false,
     timeout: 120_000,
   },

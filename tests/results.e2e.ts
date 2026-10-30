@@ -115,7 +115,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   try {
     const valid = await database.d1
       .prepare(
-        "SELECT count(*) AS count FROM election_participant p WHERE p.election_id = ? AND p.submitted_at IS NOT NULL AND EXISTS (SELECT 1 FROM ballot_rank r WHERE r.election_id = p.election_id AND r.user_id = p.user_id)",
+        "SELECT count(*) AS count FROM election_participant p WHERE p.election_id = ? AND p.submitted_at IS NOT NULL AND EXISTS (SELECT 1 FROM ballot_rank r WHERE r.election_id = p.election_id AND r.voter_id = p.voter_id)",
       )
       .bind(electionId)
       .first<{ count: number }>();

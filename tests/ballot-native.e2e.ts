@@ -33,12 +33,12 @@ test("supports unsaved native edits without JavaScript or database writes", asyn
     try {
       const participant = await database.d1
         .prepare(
-          "SELECT submitted_at FROM election_participant WHERE election_id = ? AND user_id = ?",
+          "SELECT submitted_at FROM election_participant WHERE election_id = ? AND voter_id = ?",
         )
         .bind(electionId, "test-voter")
         .first<{ submitted_at: number | null }>();
       const ranks = await database.d1
-        .prepare("SELECT candidate_id FROM ballot_rank WHERE election_id = ? AND user_id = ?")
+        .prepare("SELECT candidate_id FROM ballot_rank WHERE election_id = ? AND voter_id = ?")
         .bind(electionId, "test-voter")
         .all<{ candidate_id: number }>();
       expect(participant).not.toBeNull();
@@ -65,7 +65,7 @@ test("supports unsaved native edits without JavaScript or database writes", asyn
     try {
       const submitted = await after.d1
         .prepare(
-          "SELECT submitted_at FROM election_participant WHERE election_id = ? AND user_id = ?",
+          "SELECT submitted_at FROM election_participant WHERE election_id = ? AND voter_id = ?",
         )
         .bind(electionId, "test-voter")
         .first<{ submitted_at: number | null }>();
@@ -73,7 +73,7 @@ test("supports unsaved native edits without JavaScript or database writes", asyn
       expect(
         await after.d1
           .prepare(
-            "SELECT count(*) AS count FROM ballot_rank WHERE election_id = ? AND user_id = ?",
+            "SELECT count(*) AS count FROM ballot_rank WHERE election_id = ? AND voter_id = ?",
           )
           .bind(electionId, "test-other")
           .first<{ count: number }>(),

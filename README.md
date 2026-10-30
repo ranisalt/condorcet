@@ -161,9 +161,13 @@ Unit tests use a disposable local D1 to check ownership, rollback and concurrent
 
 End-to-end tests run in an isolated `.wrangler/e2e` state with fake build values (`test-project.supabase.co`, `test-client`). They sign voters in by minting a voter cookie with the test `SESSION_SECRET`, so they **do not exercise a real Supabase or Google sign-in**. Never point the fixture reset helpers at production.
 
-To run browser flows against the built Worker instead of the dev server:
+To run browser flows against the built Worker instead of the dev server, build with the same fake values first. This run also covers SvelteKit's CSRF origin check, which `vite dev` skips:
 
 ```sh
+PUBLIC_SUPABASE_URL=https://test-project.supabase.co \
+PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_test \
+OIDC_CLIENT_ID=test-client \
+pnpm run build
 E2E_PREVIEW=1 pnpm exec playwright test
 ```
 
