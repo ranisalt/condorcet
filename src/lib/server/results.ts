@@ -11,14 +11,14 @@ export type ResultsView =
   | {
       state: "locked";
       validCount: number;
-      threshold: number;
+      threshold: number | null;
       reason: "not-submitted" | "threshold";
     }
   | {
       state: "available";
       validCount: number;
       blankCount: number;
-      threshold: number;
+      threshold: number | null;
       matrix: CondorcetSummary["matrix"];
       winnerId: number | null;
       methods: ReturnType<typeof summarizeMethods>;
@@ -30,22 +30,22 @@ export type ResultsView =
  * published outcome is consistent with the counts it was computed from.
  */
 function lockReason(
-  election: Election,
+  threshold: number | null,
   participation: { submittedAt: Date | null } | null | undefined,
   validCount: number,
 ): "not-submitted" | "threshold" | null {
   if (participation === null || participation === undefined || participation.submittedAt === null)
     return "not-submitted";
-  if (validCount < election.resultsThreshold) return "threshold";
+  if (threshold === null || validCount < threshold) return "threshold";
   return null;
 }
 
 function locked(
-  election: Election,
+  threshold: number | null,
   validCount: number,
   reason: "not-submitted" | "threshold",
 ): ResultsView {
-  return { state: "locked", validCount, threshold: election.resultsThreshold, reason };
+  return { state: "locked", validCount, threshold, reason };
 }
 
 export function buildPairwiseCountsQuery(db: ReturnType<typeof getDb>, election: Election) {
@@ -87,6 +87,7 @@ export async function readResults(
   d1: D1Database,
   election: Election,
   voterId: string | null,
+  threshold: number | null,
 ): Promise<ResultsView> {
   const db = getDb(d1);
   const [precheckParticipation, precheckCounts] = await Promise.all([
@@ -94,9 +95,9 @@ export async function readResults(
     readElectionCounts(d1, election.id),
   ]);
 
-  if (voterId === null) return locked(election, precheckCounts.validCount, "not-submitted");
-  const precheckReason = lockReason(election, precheckParticipation, precheckCounts.validCount);
-  if (precheckReason !== null) return locked(election, precheckCounts.validCount, precheckReason);
+  if (voterId === null) return locked(threshold, precheckCounts.validCount, "not-submitted");
+  const precheckReason = lockReason(threshold, precheckParticipation, precheckCounts.validCount);
+  if (precheckReason !== null) return locked(threshold, precheckCounts.validCount, precheckReason);
 
   const participationQuery = db
     .select({ submittedAt: electionParticipant.submittedAt })
@@ -114,8 +115,8 @@ export async function readResults(
     buildPairwiseCountsQuery(db, election),
   ]);
   const snapshotCounts = countRows[0] ?? { validCount: 0, blankCount: 0 };
-  const snapshotReason = lockReason(election, participationRows[0], snapshotCounts.validCount);
-  if (snapshotReason !== null) return locked(election, snapshotCounts.validCount, snapshotReason);
+  const snapshotReason = lockReason(threshold, participationRows[0], snapshotCounts.validCount);
+  if (snapshotReason !== null) return locked(threshold, snapshotCounts.validCount, snapshotReason);
 
   const summary = summarizeCondorcet(
     election.candidates.map((candidate) => candidate.id),
@@ -126,7 +127,7 @@ export async function readResults(
     state: "available",
     validCount: snapshotCounts.validCount,
     blankCount: snapshotCounts.blankCount,
-    threshold: election.resultsThreshold,
+    threshold,
     matrix: summary.matrix,
     winnerId: summary.winnerId,
     methods: summarizeMethods(

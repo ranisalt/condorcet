@@ -24,15 +24,21 @@
     <p>
       {data.view.reason === "not-submitted"
         ? m.results_not_submitted()
-        : m.results_below_threshold()}
+        : data.view.threshold === null
+          ? m.progress_threshold_pending()
+          : m.results_below_threshold()}
     </p>
     <p>{m.valid_participation({ count: number.format(data.view.validCount) })}</p>
-    <progress
-      max={data.view.threshold}
-      value={Math.min(data.view.validCount, data.view.threshold)}
-      aria-label={m.progress_label({ threshold: number.format(data.view.threshold) })}
-    ></progress>
-    <p>{m.results_threshold({ threshold: number.format(data.view.threshold) })}</p>
+    {#if data.view.threshold === null}
+      <p>{m.results_threshold_pending()}</p>
+    {:else}
+      <progress
+        max={data.view.threshold}
+        value={Math.min(data.view.validCount, data.view.threshold)}
+        aria-label={m.progress_label({ threshold: number.format(data.view.threshold) })}
+      ></progress>
+      <p>{m.results_threshold({ threshold: number.format(data.view.threshold) })}</p>
+    {/if}
     <a class="button button--primary" href={resolve("ballot")}>{m.nav_ballot()}</a>
   </section>
 {:else}

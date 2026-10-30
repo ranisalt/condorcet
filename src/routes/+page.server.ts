@@ -1,4 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
+import { RESULTS_THRESHOLD } from "$app/env/private";
 import { env } from "cloudflare:workers";
 import { currentElection } from "#lib/server/election.ts";
 import { readElectionCounts } from "#lib/server/ballots.ts";
@@ -26,7 +27,7 @@ export const load = (async ({ locals, url }) => {
       id: election.id,
       titleKey: election.titleKey,
       closesAt: election.closesAt,
-      resultsThreshold: election.resultsThreshold,
+      resultsThreshold: RESULTS_THRESHOLD,
     },
     open: isElectionOpen(election, new Date()),
     validCount,

@@ -4,12 +4,7 @@
   import type { PageProps } from "./$types";
 
   let { data, form }: PageProps = $props();
-  const remaining = $derived(
-    data.election === null ? 0 : Math.max(0, data.election.resultsThreshold - data.validCount),
-  );
-  const progressValue = $derived(
-    data.election === null ? 0 : Math.min(data.validCount, data.election.resultsThreshold),
-  );
+  const threshold = $derived(data.election?.resultsThreshold ?? null);
 </script>
 
 <svelte:head>
@@ -102,7 +97,7 @@
             <span class="status-dot" aria-hidden="true"></span>
             {!data.open
               ? m.progress_closed()
-              : data.validCount >= data.election.resultsThreshold
+              : threshold !== null && data.validCount >= threshold
                 ? m.progress_met()
                 : m.progress_open()}
           </span>
@@ -110,34 +105,40 @@
         <p class="progress-number">
           <strong>{data.validCount.toLocaleString("pt-BR")}</strong>
           <span>
-            {m.progress_count({
-              count: data.validCount.toLocaleString("pt-BR"),
-              threshold: data.election.resultsThreshold.toLocaleString("pt-BR"),
-            })}
+            {threshold === null
+              ? m.progress_count_pending({ count: data.validCount.toLocaleString("pt-BR") })
+              : m.progress_count({
+                  count: data.validCount.toLocaleString("pt-BR"),
+                  threshold: threshold.toLocaleString("pt-BR"),
+                })}
           </span>
         </p>
-        <progress
-          value={progressValue}
-          max={data.election.resultsThreshold}
-          aria-label={m.progress_label({
-            threshold: data.election.resultsThreshold.toLocaleString("pt-BR"),
-          })}
-        ></progress>
-        {#if data.validCount >= data.election.resultsThreshold}
-          <p class="progress-note">{m.progress_met_notice()}</p>
+        {#if threshold === null}
+          <p class="progress-note">{m.progress_threshold_pending()}</p>
         {:else}
-          <p class="progress-note">
-            {m.progress_remaining({ count: remaining.toLocaleString("pt-BR") })}
-          </p>
+          <progress
+            value={Math.min(data.validCount, threshold)}
+            max={threshold}
+            aria-label={m.progress_label({ threshold: threshold.toLocaleString("pt-BR") })}
+          ></progress>
+          {#if data.validCount >= threshold}
+            <p class="progress-note">{m.progress_met_notice()}</p>
+          {:else}
+            <p class="progress-note">
+              {m.progress_remaining({
+                count: (threshold - data.validCount).toLocaleString("pt-BR"),
+              })}
+            </p>
+          {/if}
         {/if}
       </div>
       <aside class="progress-explanation">
         <h3>{m.progress_locked_title()}</h3>
         <p>{m.progress_locked_body()}</p>
         <p>
-          {m.results_threshold({
-            threshold: data.election.resultsThreshold.toLocaleString("pt-BR"),
-          })}
+          {threshold === null
+            ? m.results_threshold_pending()
+            : m.results_threshold({ threshold: threshold.toLocaleString("pt-BR") })}
         </p>
       </aside>
     </section>

@@ -9,6 +9,7 @@ const staticEnv = {
   PUBLIC_SUPABASE_URL: "https://test-project.supabase.co",
   PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
   OIDC_CLIENT_ID: "test-client",
+  RESULTS_THRESHOLD: "10000",
 };
 // The built Worker reads runtime secrets from the generated wrangler config, but
 // `vite dev` reads them through vite.loadEnv, where process.env wins over the

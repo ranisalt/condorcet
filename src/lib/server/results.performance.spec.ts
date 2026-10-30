@@ -93,7 +93,7 @@ performanceTest(
       );
 
       const startedAt = performance.now();
-      const results = await readResults(d1, currentElection, "perf-voter-0");
+      const results = await readResults(d1, currentElection, "perf-voter-0", validBallots);
       const durationMs = performance.now() - startedAt;
       const counts = await readElectionCounts(d1, currentElection.id);
       const pairs = await readPairwiseCounts(d1, currentElection);

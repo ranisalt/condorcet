@@ -53,6 +53,27 @@ it("shows real participation progress and the ranked-preference illustration", a
   await expect.element(page.getByText(m.preference_third())).toBeInTheDocument();
 });
 
+it("says the results minimum will be defined later when no threshold is configured", async () => {
+  await render(HomePage, {
+    props: {
+      data: { ...data, election: { ...data.election, resultsThreshold: null } },
+      form: null,
+      params: {},
+    },
+  });
+
+  await expect.element(page.getByText("7 votos válidos", { exact: true })).toBeVisible();
+  await expect
+    .element(
+      page.getByText("O mínimo de votos válidos para mostrar os resultados será definido depois.", {
+        exact: true,
+      }),
+    )
+    .toBeVisible();
+  await expect.element(page.getByRole("progressbar")).not.toBeInTheDocument();
+  await expect.element(page.getByText("Mínimo atingido", { exact: true })).not.toBeInTheDocument();
+});
+
 it("discloses account-linked access and simulated participation before sign-in", async () => {
   await render(HomePage, { props: { data, form: null, params: {} } });
 

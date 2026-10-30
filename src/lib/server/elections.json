@@ -5,7 +5,6 @@
       "id": "8bc131c5-3228-46e4-b310-3555653d815d",
       "titleKey": "election_br_2026_title",
       "closesAt": null,
-      "resultsThreshold": 10000,
       "sources": [
         "https://g1.globo.com/politica/eleicoes/2026/noticia/2026/10/04/quais-sao-os-numeros-dos-candidatos-a-presidencia-nas-eleicoes-2026.ghtml",
         "https://valor.globo.com/politica/eleicoes-2026/noticia/2026/09/30/candidatos-a-presidente-em-2026-quem-sao-numeros-e-partidos.ghtml",

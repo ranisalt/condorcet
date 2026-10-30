@@ -1,5 +1,6 @@
 import { building } from "$app/env";
 import { defineEnvVars } from "@sveltejs/kit/env";
+import { parseResultsThreshold } from "./lib/results-threshold.ts";
 
 /**
  * Validates a secret that only exists in the Worker runtime. The build environment does not have
@@ -45,6 +46,12 @@ export const variables = defineEnvVars({
       if (typeof value !== "string" || value === "") throw new Error("OIDC_CLIENT_ID is required");
       return value;
     },
+  },
+  RESULTS_THRESHOLD: {
+    static: true,
+    description:
+      "Valid ballots needed before results unlock. Leave unset until the number is decided; results stay locked.",
+    schema: (value) => parseResultsThreshold(typeof value === "string" ? value : undefined),
   },
   OIDC_CLIENT_SECRET: {
     description: "OAuth client secret registered with the Supabase OAuth server for this app.",

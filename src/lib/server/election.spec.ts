@@ -14,14 +14,12 @@ const validElection: {
   id: string;
   titleKey: string;
   closesAt: string | null;
-  resultsThreshold: number;
   sources: string[];
   candidates: unknown[];
 } = {
   id: electionId,
   titleKey: "election_br_2026_title",
   closesAt: null,
-  resultsThreshold: 10,
   sources: ["https://example.test/source"],
   candidates: [candidate(0, "10"), candidate(87, "20")],
 };
@@ -93,7 +91,7 @@ it("accepts candidate ID zero and rejects IDs outside the unsigned-byte integer 
   }
 });
 
-it("rejects missing candidate and vice fields and invalid thresholds", () => {
+it("rejects missing candidate and vice fields", () => {
   const missingVice = { ...candidate(2, "10"), vice: { name: "", party: "TEST" } };
   expect(() =>
     validateElectionConfig(
@@ -106,11 +104,6 @@ it("rejects missing candidate and vice fields and invalid thresholds", () => {
       validConfig({ ...validElection, candidates: [missingCandidateField, candidate(8, "20")] }),
     ),
   ).toThrow();
-  for (const resultsThreshold of [0, -1, 1.5, Number.NaN]) {
-    expect(() =>
-      validateElectionConfig(validConfig({ ...validElection, resultsThreshold })),
-    ).toThrow();
-  }
 });
 
 it("rejects malformed, invalid, and non-timezoned closing timestamps", () => {
@@ -164,8 +157,6 @@ it("rejects malformed root, elections, and election field shapes", () => {
     { ...validElection, id: "" },
     { ...validElection, titleKey: "other_title" },
     { ...validElection, closesAt: 123 },
-    { ...validElection, resultsThreshold: "10" },
-    { ...validElection, resultsThreshold: Number.POSITIVE_INFINITY },
     { ...validElection, sources: "source" },
     { ...validElection, sources: [] },
     { ...validElection, sources: ["https://example.test", " "] },

@@ -78,20 +78,12 @@ function parseElection(value: unknown, index: number): Election {
   const id = value.id;
   const titleKey = value.titleKey;
   const closesAt = value.closesAt;
-  const resultsThreshold = value.resultsThreshold;
   const rawSources = value.sources;
   const rawCandidates = value.candidates;
   if (!isUuid(id)) throw new TypeError(`${path}.id must be a UUID`);
   if (titleKey !== "election_br_2026_title") throw new TypeError(`${path}.titleKey is unsupported`);
   if (closesAt !== null && (typeof closesAt !== "string" || !hasValidTimezoneTimestamp(closesAt))) {
     throw new TypeError(`${path}.closesAt must be null or a valid timezone-qualified timestamp`);
-  }
-  if (
-    typeof resultsThreshold !== "number" ||
-    !Number.isInteger(resultsThreshold) ||
-    resultsThreshold <= 0
-  ) {
-    throw new TypeError(`${path}.resultsThreshold must be a positive integer`);
   }
   if (
     !isUnknownArray(rawSources) ||
@@ -122,7 +114,6 @@ function parseElection(value: unknown, index: number): Election {
     id,
     titleKey,
     closesAt,
-    resultsThreshold,
     sources: [...rawSources],
     candidates,
   };

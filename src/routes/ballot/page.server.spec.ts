@@ -36,7 +36,6 @@ const election: Election = {
   id: "8bc131c5-3228-46e4-b310-3555653d815d",
   titleKey: "election_br_2026_title",
   closesAt: "2026-10-15T12:00:00.000Z",
-  resultsThreshold: 2,
   sources: ["https://example.invalid/source"],
   candidates: [
     {

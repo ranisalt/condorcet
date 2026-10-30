@@ -10,7 +10,6 @@ export type Election = {
   id: string;
   titleKey: "election_br_2026_title";
   closesAt: string | null;
-  resultsThreshold: number;
   sources: string[];
   candidates: Candidate[];
 };

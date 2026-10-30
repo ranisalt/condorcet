@@ -81,13 +81,14 @@ The all-zero database ID in `wrangler.jsonc` only works locally. Local migration
 
 ### Environment variables
 
-| Variable                          | When            | Secret | Purpose                                                                                     |
-| --------------------------------- | --------------- | ------ | ------------------------------------------------------------------------------------------- |
-| `PUBLIC_SUPABASE_URL`             | build (inlined) | no     | Supabase project URL, e.g. `https://<ref>.supabase.co`. The OIDC issuer is derived from it. |
-| `PUBLIC_SUPABASE_PUBLISHABLE_KEY` | build (inlined) | no     | Lets the consent page call Supabase from the browser.                                       |
-| `OIDC_CLIENT_ID`                  | build (inlined) | no     | The OAuth client registered above.                                                          |
-| `OIDC_CLIENT_SECRET`              | runtime         | yes    | The OAuth client's secret.                                                                  |
-| `SESSION_SECRET`                  | runtime         | yes    | HMAC key for the signed cookies. Generate with `openssl rand -base64 48`.                   |
+| Variable                          | When            | Secret | Purpose                                                                                                                                  |
+| --------------------------------- | --------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_SUPABASE_URL`             | build (inlined) | no     | Supabase project URL, e.g. `https://<ref>.supabase.co`. The OIDC issuer is derived from it.                                              |
+| `PUBLIC_SUPABASE_PUBLISHABLE_KEY` | build (inlined) | no     | Lets the consent page call Supabase from the browser.                                                                                    |
+| `OIDC_CLIENT_ID`                  | build (inlined) | no     | The OAuth client registered above.                                                                                                       |
+| `RESULTS_THRESHOLD`               | build (inlined) | no     | Valid ballots needed before results unlock. Optional: if unset, results stay locked and the pages say the minimum will be defined later. |
+| `OIDC_CLIENT_SECRET`              | runtime         | yes    | The OAuth client's secret.                                                                                                               |
+| `SESSION_SECRET`                  | runtime         | yes    | HMAC key for the signed cookies. Generate with `openssl rand -base64 48`.                                                                |
 
 Build-time values are read from `.env` or the build environment and compiled into the bundle, so anyone can check them in the deployed code. Runtime secrets never enter the bundle. Rotating `SESSION_SECRET` signs everyone out.
 
@@ -96,7 +97,7 @@ The app takes its origin from each request (`event.url.origin`), so no origin va
 ## Deploying to Cloudflare
 
 1. Create a D1 database and put its ID in `wrangler.jsonc`.
-2. In the Worker's **Build → Variables**, set the three build-time variables.
+2. In the Worker's **Build → Variables**, set the build-time variables.
 3. Set the runtime secrets:
 
    ```sh
@@ -120,7 +121,7 @@ Before collecting real preferences, also confirm the official candidate roster a
 
 - Selecting an election opens it immediately. `closesAt: null` means no closing time; otherwise use a timezone-qualified ISO 8601 time, preferably UTC with `Z`. Writes are refused at or after closing, though a request admitted just before may finish after.
 - Freeze the UUID, roster and unique 8-bit candidate IDs before the first submission. Fixing a live slate needs a new UUID. Switching UUIDs keeps old data, but there is no archive UI.
-- `resultsThreshold` is the number of valid ballots needed before results unlock (`10000` by default).
+- The number of valid ballots needed before results unlock comes from `RESULTS_THRESHOLD`, not this file.
 - Signed-in voters acknowledge the privacy and simulation warnings before they see the ballot. The initial order is shuffled once; saved rankings are restored.
 - Adding, removing and reordering stay unsaved until the voter submits. Plain HTML forms make this work without JavaScript.
 - Ranked tickets beat every unranked ticket; unranked tickets tie for last. Ranked positions cannot tie.
