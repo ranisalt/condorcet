@@ -2,7 +2,7 @@ import type * as OidcModule from "#lib/server/oidc.ts";
 import { isRedirect, type Cookies } from "@sveltejs/kit";
 import { SESSION_SECRET } from "$app/env/private";
 import { describe, expect, it, vi } from "vitest";
-import { readVoter, voterCookieName, type VoterId } from "#lib/server/voter-session.ts";
+import { readVoter, voterCookie, type VoterId } from "#lib/server/voter-session.ts";
 import type { RequestEvent } from "./$types";
 
 const login = vi.hoisted(() => ({ result: null as (() => Promise<string>) | null }));
@@ -51,7 +51,7 @@ describe("GET /auth/callback", () => {
     const { location, cookies, jar } = await callback("https://condorcet.test");
 
     expect(location).toBe("/ballot");
-    expect([...jar.keys()]).toEqual([voterCookieName(true)]);
+    expect([...jar.keys()]).toEqual([voterCookie.name(true)]);
     const voter = await readVoter(cookies, SESSION_SECRET, new Date());
     expect(voter?.id).toBe("b30810fe-0000-4000-8000-000000000000" as VoterId);
   });

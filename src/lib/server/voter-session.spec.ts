@@ -1,13 +1,7 @@
 import type { Cookies } from "@sveltejs/kit";
 import { describe, expect, it } from "vitest";
-import {
-  clearVoter,
-  readVoter,
-  sealPayload,
-  voterCookieName,
-  writeVoter,
-  type VoterId,
-} from "./voter-session.ts";
+import { signedCookie } from "./signed-cookie.ts";
+import { clearVoter, readVoter, voterCookie, writeVoter, type VoterId } from "./voter-session.ts";
 
 const SECRET = "test-session-secret-with-enough-length";
 const NOW = new Date("2026-10-15T12:00:00.000Z");
@@ -72,9 +66,10 @@ describe("voter session cookie", () => {
   });
 
   it("rejects a value signed for the login transaction even if it carries a sub", async () => {
-    const value = await sealPayload({ sub: VOTER, exp: NOW.getTime() + 60_000 }, SECRET, "oidc-tx");
+    const transaction = signedCookie({ purpose: "oidc-tx", name: "voter", ttlMs: 60_000 });
+    const value = await transaction.seal({ sub: VOTER }, SECRET, NOW);
     const { cookies } = fakeCookies();
-    cookies.set(voterCookieName(false), value, {});
+    cookies.set(voterCookie.name(false), value, {});
     expect(await readVoter(cookies, SECRET, NOW)).toBeNull();
   });
 

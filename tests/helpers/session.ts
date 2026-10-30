@@ -1,23 +1,19 @@
 import type { BrowserContext } from "@playwright/test";
-import {
-  sealPayload,
-  VOTER_SESSION_TTL_MS,
-  voterCookieName,
-} from "../../src/lib/server/voter-session.ts";
+import { voterCookie } from "../../src/lib/server/voter-session.ts";
 import { TEST_ORIGIN, TEST_SECRET } from "./d1.ts";
 
 export async function signInFixture(
   context: BrowserContext,
   voterId: "test-voter" | "test-other",
 ): Promise<void> {
-  const exp = Date.now() + VOTER_SESSION_TTL_MS;
-  const value = await sealPayload({ sub: voterId, exp }, TEST_SECRET, "voter");
+  const now = new Date();
+  const value = await voterCookie.seal({ sub: voterId }, TEST_SECRET, now);
   await context.addCookies([
     {
-      name: voterCookieName(false),
+      name: voterCookie.name(false),
       value,
       url: TEST_ORIGIN,
-      expires: Math.floor(exp / 1000),
+      expires: Math.floor(now.getTime() / 1000) + 86_400,
       httpOnly: true,
       secure: false,
       sameSite: "Lax",

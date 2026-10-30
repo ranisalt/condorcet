@@ -1,12 +1,7 @@
 import type { Cookies } from "@sveltejs/kit";
-import {
-  base64UrlDecode,
-  base64UrlEncode,
-  isRecord,
-  openPayload,
-  sealPayload,
-  type VoterId,
-} from "./voter-session.ts";
+import { base64UrlDecode, base64UrlEncode, isRecord } from "./encoding.ts";
+import { signedCookie } from "./signed-cookie.ts";
+import type { VoterId } from "./voter-session.ts";
 
 export type LoginErrorReason = "state" | "nonce" | "token" | "claims" | "provider";
 
@@ -35,14 +30,9 @@ export type OidcConfig = {
 const AUTHORIZE_PATH = "/oauth/authorize";
 const TOKEN_PATH = "/oauth/token";
 const JWKS_PATH = "/.well-known/jwks.json";
-const TRANSACTION_TTL_MS = 600_000;
-const TRANSACTION_COOKIE = "oidc_tx";
+const transactionCookie = signedCookie({ purpose: "oidc-tx", name: "oidc_tx", ttlMs: 600_000 });
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-
-function transactionCookieName(secure: boolean): string {
-  return secure ? `__Host-${TRANSACTION_COOKIE}` : TRANSACTION_COOKIE;
-}
 
 function normalizedIssuer(issuer: string): string {
   return issuer.replace(/\/+$/, "");
@@ -64,18 +54,13 @@ export async function beginLogin(config: OidcConfig, cookies: Cookies, now: Date
     new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(verifier))),
   );
 
-  const value = await sealPayload(
-    { state, nonce, verifier, exp: now.getTime() + TRANSACTION_TTL_MS },
+  await transactionCookie.set(
+    cookies,
     config.secret,
-    "oidc-tx",
+    { state, nonce, verifier },
+    now,
+    config.secure,
   );
-  cookies.set(transactionCookieName(config.secure), value, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: config.secure,
-    maxAge: TRANSACTION_TTL_MS / 1000,
-  });
 
   const url = new URL(`${normalizedIssuer(config.issuer)}${AUTHORIZE_PATH}`);
   url.searchParams.set("response_type", "code");
@@ -96,18 +81,13 @@ export async function completeLogin(
   fetchFn: typeof fetch,
   now: Date,
 ): Promise<VoterId> {
-  const name = transactionCookieName(config.secure);
-  const raw = cookies.get(name);
-  cookies.delete(name, { path: "/", httpOnly: true, sameSite: "lax", secure: config.secure });
-
-  const transaction = raw ? await openPayload(raw, config.secret, "oidc-tx") : null;
+  const transaction = await transactionCookie.read(cookies, config.secret, now);
+  transactionCookie.clear(cookies, config.secure);
   if (
     !transaction ||
     typeof transaction.state !== "string" ||
     typeof transaction.nonce !== "string" ||
-    typeof transaction.verifier !== "string" ||
-    typeof transaction.exp !== "number" ||
-    transaction.exp <= now.getTime()
+    typeof transaction.verifier !== "string"
   ) {
     throw new LoginError("state");
   }
