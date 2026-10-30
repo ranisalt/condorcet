@@ -81,6 +81,22 @@ export default defineConfig(({ mode }) => {
         adapter: adapter(platformProxy ? { platformProxy } : undefined),
         preprocess: [mdsvex({ extensions: [".svx", ".md"] })],
         extensions: [".svelte", ".svx", ".md"],
+        csp: {
+          directives: {
+            "default-src": ["self"],
+            "script-src": ["self"],
+            // app.html wraps the body in an inline style attribute.
+            "style-src": ["self", "unsafe-inline"],
+            "img-src": ["self", "data:"],
+            // The OAuth consent page talks to the Supabase auth API from the browser.
+            "connect-src": ["self", "https://*.supabase.co"],
+            // The login action redirects to the Supabase authorize endpoint.
+            "form-action": ["self", "https://*.supabase.co"],
+            "frame-ancestors": ["none"],
+            "base-uri": ["self"],
+            "object-src": ["none"],
+          },
+        },
       }),
       paraglideVitePlugin({
         project: "./project.inlang",
