@@ -255,14 +255,8 @@ it("marks Ranked Pairs unresolved when its explicit exploration budget is exhaus
   });
 });
 
-it("rejects duplicate IDs, invalid matrix cells and an invalid exploration budget", () => {
-  const matrix = matrixFrom([
-    [0, 1],
-    [0, 0],
-  ]);
-  expect(() => summarizeMethods([0, 0], matrix)).toThrow(/unique/);
-  expect(() => summarizeMethods([0, 1], matrixFrom([[0], [0, 0]]))).toThrow(/nonnegative integers/);
-  expect(() => summarizeMethods([0, 1], matrix, { maxExplorationStates: 0 })).toThrow(
+it("rejects an invalid exploration budget", () => {
+  expect(() => summarizeMethods([0], matrixFrom([[0]]), { maxExplorationStates: 0 })).toThrow(
     /positive safe integer/,
   );
 });

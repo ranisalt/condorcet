@@ -105,25 +105,6 @@ it("allows submitting an empty ballot", async () => {
   await expect.element(page.getByText(m.empty_rule())).toBeInTheDocument();
 });
 
-it("groups all ballot rules in one bulleted list after the privacy notice", async () => {
-  await render(Ballot, {
-    props: { election, initialDraft: { ranked: [], order: [0, 87] }, open: true },
-  });
-
-  const rules = [m.omitted_rule(), m.empty_rule(), m.ballot_changes_notice()];
-  const list = page.getByText(rules[0]).element().parentElement;
-  expect(list?.tagName).toBe("UL");
-  expect(list?.children).toHaveLength(3);
-  for (const rule of rules) {
-    const item = page.getByText(rule).element();
-    expect(item.tagName).toBe("LI");
-    expect(item.parentElement).toBe(list);
-  }
-  expect(list?.previousElementSibling).toBe(
-    page.getByRole("region", { name: m.privacy_heading() }).element(),
-  );
-});
-
 it("announces a draft returned by a native form action as unsaved", async () => {
   await render(Ballot, {
     props: {

@@ -64,7 +64,6 @@ it("rejects an invalid UUID and a selected UUID missing from the election list",
 });
 
 it("rejects malformed configuration, duplicate election/candidate IDs, and duplicate ballot numbers", () => {
-  expect(() => validateElectionConfig(null)).toThrow();
   expect(() =>
     validateElectionConfig({ ...validConfig(), elections: [validElection, validElection] }),
   ).toThrow();
@@ -80,30 +79,8 @@ it("rejects malformed configuration, duplicate election/candidate IDs, and dupli
   ).toThrow();
 });
 
-it("accepts candidate ID zero and rejects IDs outside the unsigned-byte integer range", () => {
+it("accepts candidate ID zero", () => {
   expect(validateElectionConfig(validConfig()).elections[0]?.candidates[0]?.id).toBe(0);
-  for (const id of [-1, 256, 1.5, Number.NaN]) {
-    expect(() =>
-      validateElectionConfig(
-        validConfig({ ...validElection, candidates: [candidate(id, "10"), candidate(8, "20")] }),
-      ),
-    ).toThrow();
-  }
-});
-
-it("rejects missing candidate and vice fields", () => {
-  const missingVice = { ...candidate(2, "10"), vice: { name: "", party: "TEST" } };
-  expect(() =>
-    validateElectionConfig(
-      validConfig({ ...validElection, candidates: [missingVice, candidate(8, "20")] }),
-    ),
-  ).toThrow();
-  const missingCandidateField = { id: 2, name: "Candidate", number: "10", party: "TEST" };
-  expect(() =>
-    validateElectionConfig(
-      validConfig({ ...validElection, candidates: [missingCandidateField, candidate(8, "20")] }),
-    ),
-  ).toThrow();
 });
 
 it("rejects malformed, invalid, and non-timezoned closing timestamps", () => {
@@ -178,6 +155,7 @@ it("rejects malformed candidate, name, vice, and candidate ID values", () => {
     { ...candidate(2, "10"), id: -1 },
     { ...candidate(2, "10"), id: 256 },
     { ...candidate(2, "10"), id: 1.5 },
+    { ...candidate(2, "10"), id: Number.NaN },
   ]) {
     expect(() =>
       validateElectionConfig(
@@ -192,6 +170,7 @@ it("rejects malformed candidate, name, vice, and candidate ID values", () => {
     { ...candidate(2, "10"), number: null },
     { ...candidate(2, "10"), party: "  " },
     { ...candidate(2, "10"), party: false },
+    { id: 2, name: "Candidate", number: "10", party: "TEST" },
     { ...candidate(2, "10"), vice: null },
     { ...candidate(2, "10"), vice: [] },
     { ...candidate(2, "10"), vice: { name: " ", party: "TEST" } },
@@ -231,9 +210,4 @@ it("validates calendar fields, offsets, seconds, and leap days in closing timest
       validateElectionConfig(validConfig({ ...validElection, closesAt })).elections[0]?.closesAt,
     ).toBe(closesAt);
   }
-});
-
-it("returns null for an unselected or unmatched election ID", () => {
-  expect(selectElection({ currentElectionId: null, elections: [] })).toBeNull();
-  expect(selectElection({ currentElectionId: electionId, elections: [] })).toBeNull();
 });

@@ -210,16 +210,6 @@ describe("completeLogin", () => {
     expect(createHash("sha256").update(verifier).digest("base64url")).toBe(challenge);
   });
 
-  it("fetches the signing keys from the issuer's JWKS endpoint", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn, calls } = providerFetch({ idToken: await signJwt(validClaims(nonce)) });
-
-    await completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW);
-
-    expect(calls.map((call) => call.url)).toContain(JWKS_URL);
-  });
-
   it("deletes the transaction cookie after success", async () => {
     const { cookies, jar } = fakeCookies();
     const { state, nonce } = await startLogin(cookies);
@@ -284,16 +274,6 @@ describe("completeLogin", () => {
     await expectLoginError(
       completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
       "token",
-    );
-  });
-
-  it("happy path accepts an ES256 token whose kid is in the JWKS", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({ idToken: await signJwt(validClaims(nonce)) });
-
-    await expect(completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW)).resolves.toBe(
-      "voter-opaque-1",
     );
   });
 

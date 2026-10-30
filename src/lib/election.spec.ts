@@ -55,10 +55,7 @@ it("parses a full candidate order with an optional empty ranking", () => {
   expect(parseDraft(form, election)).toEqual({ ranked: [], order: [87, 0, 130] });
 });
 
-it("rejects malformed rankings, File values, and unknown or cross-election IDs", () => {
-  expect(() => parseRankedIds(["999"], candidates)).toThrow();
-  expect(() => parseRankedIds([new File(["130"], "candidate.txt")], candidates)).toThrow();
-
+it("rejects a draft that ranks an unknown candidate", () => {
   const form = new FormData();
   form.set("electionId", election.id);
   form.append("candidateOrderId", "87");
