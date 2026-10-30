@@ -1,3 +1,4 @@
+import { mdsvex } from "mdsvex";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
@@ -78,6 +79,8 @@ export default defineConfig(({ mode }) => {
           runes: ({ filename }) => (filename.includes("node_modules") ? undefined : true),
         },
         adapter: adapter(platformProxy ? { platformProxy } : undefined),
+        preprocess: [mdsvex({ extensions: [".svx", ".md"] })],
+        extensions: [".svelte", ".svx", ".md"],
       }),
       paraglideVitePlugin({
         project: "./project.inlang",

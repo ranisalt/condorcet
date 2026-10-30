@@ -64,20 +64,6 @@ const requiredKeys = [
   "no_condorcet_winner",
   "pairwise_caption",
   "pairwise_row_label",
-  "method_title",
-  "method_intro",
-  "method_winner_title",
-  "method_winner_body",
-  "method_paradox_title",
-  "method_paradox_body",
-  "method_plurality_title",
-  "method_plurality_body",
-  "method_runoff_title",
-  "method_runoff_body",
-  "method_example_title",
-  "method_example_body",
-  "method_limits_title",
-  "method_limits_body",
   "skip_to_content",
   "main_navigation",
   "unexpected_error",
@@ -116,14 +102,6 @@ const requiredKeys = [
   "ballot_saving_status",
   "ballot_readonly_heading",
   "ballot_readonly_body",
-  "education_copeland_title",
-  "education_copeland_body",
-  "education_schulze_title",
-  "education_schulze_body",
-  "education_ranked_pairs_title",
-  "education_ranked_pairs_body",
-  "education_method_ties_title",
-  "education_method_ties_body",
   "results_intro",
   "results_locked_title",
   "results_strict_label",
@@ -176,13 +154,4 @@ it("keeps the simulation, privacy, and login warnings exact", () => {
   expect(messages.empty_rule).toContain("não entram nos cálculos");
   expect(messages.privacy_obfuscation).toContain("não é criptografia");
   expect(messages.privacy_obfuscation).toContain("ordem de cada voto");
-});
-
-it("explains the three methods, tied outcomes, and unresolved exploration directly", () => {
-  expect(messages.education_copeland_body).toContain("vitórias menos derrotas");
-  expect(messages.education_schulze_body).toContain("caminho mais forte");
-  expect(messages.education_ranked_pairs_body).toContain("margem");
-  expect(messages.education_ranked_pairs_body).toContain("votos vencedores");
-  expect(messages.education_method_ties_body).toContain("todas as ordens empatadas");
-  expect(messages.education_method_ties_body).toContain("exploração");
 });

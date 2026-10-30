@@ -1,0 +1,98 @@
+<script lang="ts">
+  import { m } from "#lib/paraglide/messages.js";
+</script>
+
+<svelte:head>
+  <title>{`Métodos de contagem por preferências ordenadas · ${m.app_title()}`}</title>
+</svelte:head>
+
+<article class="education-page">
+
+# Métodos de contagem por preferências ordenadas
+
+A cédula registra uma ordem de preferência. Cada método usa as mesmas comparações entre pares, mas aplica uma regra diferente para resumir os resultados.
+
+<section>
+
+## Vencedora estrita de Condorcet
+
+Uma candidatura é vencedora estrita de Condorcet quando obtém mais votos do que cada outra candidatura em todos os confrontos diretos. Empatar qualquer confronto impede esse resultado. Pode não haver vencedora.
+
+</section>
+
+<section>
+
+## Ciclo de preferências
+
+Três votos podem formar este ciclo: A > B > C, B > C > A e C > A > B. A vence B por 2 a 1, B vence C por 2 a 1 e C vence A por 2 a 1. Cada cédula tem uma ordem coerente, mas o conjunto não forma uma ordem coletiva transitiva. Nesse caso, não existe vencedora estrita de Condorcet.
+
+</section>
+
+<section>
+
+## Pluralidade em turno único
+
+Na pluralidade simples, cada pessoa escolhe uma candidatura e vence quem recebe mais votos, mesmo sem maioria absoluta. As demais preferências não são registradas. Uma candidatura pode vencer por pluralidade e perder um confronto direto contra outra.
+
+</section>
+
+<section>
+
+## Sistema majoritário de dois turnos
+
+Na eleição presidencial brasileira, a candidatura precisa de mais da metade dos votos válidos para vencer no primeiro turno. Sem essa maioria, as duas candidaturas mais votadas disputam o segundo turno. As pessoas votam de novo e podem mudar de escolha. O segundo turno não aproveita as preferências de uma cédula ordenada e não garante a eleição de uma vencedora de Condorcet.
+
+</section>
+
+<section>
+
+## Exemplo de eliminação da vencedora de Condorcet
+
+Em um exemplo fictício com 100 votos, 35 pessoas preferem A > C > B, 33 preferem B > C > A e 32 preferem C > A > B. Na pluralidade, A vence com 35 votos e A e B avançam ao segundo turno. Se as preferências permanecerem, A vence por 67 a 33. Porém, C vence A por 65 a 35 e B por 67 a 33. C é a vencedora estrita de Condorcet, mas não avança ao segundo turno.
+
+</section>
+
+<section>
+
+## Limites da simulação
+
+A participação é voluntária e não forma uma amostra representativa. Uma pessoa pode usar várias contas Google. As preferências podem mudar conforme o sistema eleitoral. Os exemplos são fictícios, e os resultados não permitem prever uma eleição real.
+
+</section>
+
+<section id="comparison-methods" class="method-grid" aria-label="Métodos de contagem por preferências ordenadas">
+
+<div class="method-card">
+
+## Copeland: saldo de vitórias e derrotas
+
+Em cada confronto, uma vitória vale 1 ponto, uma derrota vale −1 e um empate vale 0. A pontuação é o total de vitórias menos derrotas. Todas as candidaturas com a maior pontuação permanecem empatadas.
+
+</div>
+
+<div class="method-card">
+
+## Schulze: caminhos de vitórias
+
+O método compara a força dos caminhos entre candidaturas. A força de um caminho é a menor quantidade de votos vencedores entre suas etapas. Vence a comparação quem tem o caminho mais forte contra cada adversária. O cálculo usa a variante de votos vencedores.
+
+</div>
+
+<div class="method-card">
+
+## Tideman: pares ranqueados
+
+O método ordena as vitórias diretas pela margem e depois pela quantidade de votos vencedores. Em seguida, trava cada resultado nessa ordem, desde que não crie um ciclo. Quando duas vitórias têm exatamente a mesma força, o método considera todas as ordens possíveis entre elas.
+
+</div>
+
+</section>
+
+<section class="method-limit-note">
+
+## Empates e limites do cálculo
+
+Os métodos preservam todas as candidaturas empatadas. Nem a ordem da lista nem o identificador desempatam. No método de Tideman, todas as ordens empatadas entram no cálculo. Se a exploração das ordens atingir o limite de cálculo, o resultado fica marcado como não resolvido, e o método não escolhe uma vencedora arbitrária.
+
+</section>
+</article>
