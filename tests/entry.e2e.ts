@@ -13,10 +13,10 @@ test("shows public election status, count-only progress, and Google-only entry",
   await expect(
     page.getByRole("contentinfo").getByText(/Esta é uma simulação para fins de estudo/),
   ).toBeVisible();
-  await expect(page.getByText(/O acesso é feito apenas pelo Google/)).toBeVisible();
+  await expect(page.getByText(/O login usa apenas o Google/)).toBeVisible();
   await expect(page.getByText("0 de 10.000 votos válidos", { exact: true })).toBeVisible();
   await expect(
-    page.getByText(/Resultados disponíveis a partir de 10\.000 votos válidos/),
+    page.getByText(/Os resultados aparecem a partir de 10\.000 votos válidos/),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Entrar com Google" })).toBeVisible();
   await expect(page.locator('input[type="password"]')).toHaveCount(0);

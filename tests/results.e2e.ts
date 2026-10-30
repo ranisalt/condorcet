@@ -15,7 +15,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   await signInFixture(context, "test-other");
   await page.goto("/results");
   await expect(page.getByText("Votos válidos: 9.999")).toBeVisible();
-  await expect(page.getByText(/Envie seu voto para consultar os resultados/)).toBeVisible();
+  await expect(page.getByText(/Envie seu voto para ver os resultados/)).toBeVisible();
   const lockedHtml = await page.content();
   expect(lockedHtml).not.toContain("Votos em branco:");
   expect(lockedHtml).not.toContain("Comparações entre candidaturas");
@@ -50,7 +50,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   await signInFixture(context, "test-voter");
   await page.goto("/results");
   await expect(page.getByRole("table", { name: "Comparações entre candidaturas" })).toBeVisible();
-  await expect(page.getByText(/Votos em branco: 2/)).toBeVisible();
+  await expect(page.getByText(/Votos em branco, fora dos cálculos: 2/)).toBeVisible();
   await expect(page.getByRole("columnheader", { name: /Lula/ })).toBeVisible();
   await expect(page.getByRole("cell", { name: /10\.000/ }).first()).toBeVisible();
 

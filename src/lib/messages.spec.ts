@@ -160,10 +160,10 @@ it("keeps the simulation, privacy, and login warnings exact", () => {
     "Esta é uma simulação para fins de estudo. Não é uma eleição oficial, não representa uma pesquisa eleitoral e seus resultados não refletem a realidade.",
   );
   expect(messages.privacy_warning).toBe(
-    "Seu voto não é anônimo. Ele fica associado à sua conta no banco de dados, e o operador do serviço pode identificá-lo. A Cloudflare, que hospeda o serviço, também pode acessar os dados. Não use este serviço se quiser manter suas preferências políticas em segredo.",
+    "Seu voto não é anônimo. O login passa por um serviço separado, a Supabase, que conhece sua conta Google. O simulador recebe dela apenas um identificador aleatório e guarda seu voto associado a ele, sem e-mail nem nome. Quem administra os dois serviços pode cruzar os dados e saber como você votou. A Supabase e a Cloudflare, que hospeda o simulador, também podem acessar os dados que guardam. Não use este simulador se quiser manter suas preferências políticas em segredo.",
   );
   expect(messages.login_explanation).toBe(
-    "O login usa apenas o Google, para dificultar envios repetidos. Isso não garante um voto por pessoa, porque uma pessoa pode usar várias contas. Não há cadastro com senha.",
+    "O login usa apenas o Google, por meio da Supabase, para dificultar votos repetidos. Isso não garante um voto por pessoa, porque uma pessoa pode ter várias contas. Não há cadastro com senha.",
   );
   expect(messages.thanks_title).toBe("Cédula registrada");
   expect(messages.omitted_rule).toBe(
@@ -171,8 +171,8 @@ it("keeps the simulation, privacy, and login warnings exact", () => {
   );
   expect(messages.empty_rule).toContain("Votos em branco não contam como participação válida");
   expect(messages.empty_rule).toContain("não entram nos cálculos");
-  expect(messages.privacy_obfuscation).toContain("não criptografia");
-  expect(messages.privacy_obfuscation).toContain("ordem de candidaturas de cada voto");
+  expect(messages.privacy_obfuscation).toContain("não é criptografia");
+  expect(messages.privacy_obfuscation).toContain("ordem de cada voto");
 });
 
 it("explains the three methods, tied outcomes, and unresolved exploration directly", () => {
