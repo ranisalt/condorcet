@@ -36,7 +36,7 @@
 </div>
 
 <section class="condorcet-panel" aria-labelledby="condorcet-heading">
-  <p class="result-eyebrow">{m.results_strict_label()}</p>
+  <p class="eyebrow">{m.results_strict_label()}</p>
   {#if winner}
     <h2 id="condorcet-heading">{winner.name}</h2>
     <p>{m.results_strict_winner_description()}</p>
@@ -62,7 +62,7 @@
     class="method-outcome"
     aria-label={m.results_method_outcome({ method: methods[method].label() })}
   >
-    <p class="result-eyebrow">{m.results_method_result()}</p>
+    <p class="eyebrow">{m.results_method_result()}</p>
     {#if outcome.unresolved}
       <h3>{m.results_unresolved_title()}</h3>
       <p>{m.results_unresolved_description()}</p>
@@ -156,22 +156,15 @@
     flex-wrap: wrap;
     gap: 0.75rem 1.5rem;
     margin-block: 1.5rem;
-    color: var(--muted, #52615a);
+    color: var(--muted);
     font-size: 0.875rem;
   }
   .condorcet-panel {
     padding: clamp(1.5rem, 4vw, 2.5rem);
-    border: 1px solid var(--border, #d9ded6);
-    border-radius: 0.75rem;
-    background: #edf3ed;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--green-soft);
     margin-block: 1.5rem 3rem;
-  }
-  .result-eyebrow {
-    font-size: 0.75rem;
-    font-weight: 650;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-block: 0 0.75rem;
   }
   .condorcet-panel h2 {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
@@ -191,8 +184,8 @@
     padding: 0.375rem;
     margin-block: 1.5rem 0;
     background: #e9ece5;
-    border: 1px solid var(--border, #d9ded6);
-    border-radius: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
   }
   .method-navigation a {
     min-height: 2.75rem;
@@ -208,12 +201,13 @@
     font-weight: 600;
   }
   .method-navigation a[aria-current="page"] {
-    background: #fffefa;
+    background: var(--surface);
     box-shadow: 0 1px 3px #142a1814;
   }
   .method-outcome {
-    border: 1px solid var(--border, #d9ded6);
-    border-radius: 0.5rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 0.3rem;
     padding: 1.5rem;
     margin-block: 1rem;
   }
@@ -234,7 +228,7 @@
   }
   small {
     display: block;
-    color: var(--muted, #52615a);
+    color: var(--muted);
     font-size: 0.8rem;
     font-weight: 400;
   }
@@ -244,8 +238,8 @@
   .margin-scroll {
     max-width: 100%;
     overflow-x: auto;
-    border: 1px solid var(--border, #d9ded6);
-    border-radius: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
     margin-block-start: 1.5rem;
   }
   table {
@@ -262,7 +256,7 @@
   th,
   td {
     padding: 1rem;
-    border-top: 1px solid var(--border, #d9ded6);
+    border-top: 1px solid var(--line);
     text-align: center;
     min-width: 7rem;
   }
@@ -297,7 +291,7 @@
     color: #66736a;
   }
   .matrix-legend {
-    color: var(--muted, #52615a);
+    color: var(--muted);
     font-size: 0.875rem;
   }
 </style>

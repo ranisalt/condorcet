@@ -15,7 +15,6 @@
     <p class="eyebrow">{m.election_br_2026_title()}</p>
     <h1 id="thanks-heading">{m.thanks_title()}</h1>
     <p class="thanks-message" role="status">{data.blank ? m.thanks_blank() : m.thanks_saved()}</p>
-    <p class="notice-card">{m.simulation_warning()}</p>
     <nav class="thanks-actions" aria-label={m.main_navigation()}>
       <a class="button button--primary" href={resolve("ballot")}>{m.edit_vote()}</a>
       <a class="button" href={resolve("results")}>{m.nav_results()}</a>

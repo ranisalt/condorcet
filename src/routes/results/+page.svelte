@@ -12,7 +12,7 @@
   <title>{m.results_title()} · {m.app_title()}</title>
 </svelte:head>
 
-<header class="results-heading">
+<header class="page-heading">
   <p class="eyebrow">{m[data.view.election.titleKey]()}</p>
   <h1>{m.results_title()}</h1>
   <p>{m.results_intro()}</p>
@@ -45,35 +45,17 @@
   <ResultsPanel view={data.view} method={data.method ?? "copeland"} />
 {/if}
 
-<p class="results-disclaimer">{m.simulation_warning()}</p>
-
 <style>
-  .results-heading {
-    margin-block: 1rem 2rem;
-  }
-  .eyebrow {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   .locked-results {
-    padding: clamp(1.5rem, 4vw, 3rem);
-    border: 1px solid var(--border, #d9ded6);
-    border-radius: 0.75rem;
-    max-width: 52rem;
+    padding: 2rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--surface);
   }
   .locked-results progress {
     display: block;
     width: 100%;
     height: 0.5rem;
-    accent-color: #24523a;
-  }
-  .results-disclaimer {
-    margin-block-start: 3rem;
-    padding-block-start: 1.5rem;
-    border-top: 1px solid var(--border, #d9ded6);
-    color: var(--muted, #52615a);
-    font-size: 0.875rem;
+    accent-color: var(--green);
   }
 </style>

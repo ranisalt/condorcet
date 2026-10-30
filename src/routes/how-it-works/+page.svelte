@@ -8,7 +8,6 @@
 
 <article class="education-page">
   <h1>{m.method_title()}</h1>
-  <p>{m.simulation_warning()}</p>
   <p>{m.method_intro()}</p>
 
   <section>

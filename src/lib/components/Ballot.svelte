@@ -93,7 +93,6 @@
   </header>
 
   <div class="ballot-notices">
-    <p class="notice-card">{m.simulation_warning()}</p>
     <section class="notice-card notice-card--privacy" aria-labelledby="ballot-privacy-heading">
       <h2 id="ballot-privacy-heading">{m.privacy_heading()}</h2>
       <p>{m.privacy_warning()}</p>

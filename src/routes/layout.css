@@ -385,8 +385,8 @@ a {
   padding: 1rem 1.15rem;
   border: 1px solid var(--line);
   border-inline-start: 3px solid var(--green);
-  border-radius: 0.2rem;
-  background: #fff;
+  border-radius: 0.3rem;
+  background: var(--surface);
 }
 
 .notice-card--privacy {
@@ -564,11 +564,6 @@ progress::-moz-progress-bar {
 
 .page-heading .eyebrow {
   margin-block-end: 0.5rem;
-}
-
-.ballot-page {
-  max-width: 68rem;
-  margin-inline: auto;
 }
 
 .ballot-notices {
@@ -769,11 +764,6 @@ progress::-moz-progress-bar {
   flex: 0 0 auto;
 }
 
-.acknowledgment-page {
-  max-width: 48rem;
-  margin-inline: auto;
-}
-
 .acknowledgment-card {
   margin-block: 1rem;
   padding: 1.25rem;
@@ -852,11 +842,6 @@ progress::-moz-progress-bar {
 
 .thanks-actions {
   margin-block: 1.25rem 0;
-}
-
-.education-page {
-  max-width: 58rem;
-  margin-inline: auto;
 }
 
 .education-page > p {
