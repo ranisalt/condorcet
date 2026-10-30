@@ -63,6 +63,7 @@ export async function beginLogin(config: OidcConfig, cookies: Cookies, now: Date
   const value = await sealPayload(
     { state, nonce, verifier, exp: now.getTime() + TRANSACTION_TTL_MS },
     config.secret,
+    "oidc-tx",
   );
   cookies.set(transactionCookieName(config.secure), value, {
     path: "/",
@@ -95,7 +96,7 @@ export async function completeLogin(
   const raw = cookies.get(name);
   cookies.delete(name, { path: "/", httpOnly: true, sameSite: "lax", secure: config.secure });
 
-  const transaction = raw ? await openPayload(raw, config.secret) : null;
+  const transaction = raw ? await openPayload(raw, config.secret, "oidc-tx") : null;
   if (
     !transaction ||
     typeof transaction.state !== "string" ||

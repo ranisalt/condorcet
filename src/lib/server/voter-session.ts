@@ -43,15 +43,23 @@ export function hmacKey(secret: string, usage: "sign" | "verify"): Promise<Crypt
 }
 
 /** Produces `base64url(JSON payload).base64url(HMAC-SHA256)`. */
+/** Each cookie kind signs under its own purpose, so a value issued for one is never valid as another. */
+export type CookiePurpose = "voter" | "oidc-tx";
+
+function signedInput(purpose: CookiePurpose, body: string): Uint8Array<ArrayBuffer> {
+  return encoder.encode(`${purpose}.${body}`);
+}
+
 export async function sealPayload(
   payload: Record<string, unknown>,
   secret: string,
+  purpose: CookiePurpose,
 ): Promise<string> {
   const body = base64UrlEncode(encoder.encode(JSON.stringify(payload)));
   const signature = await crypto.subtle.sign(
     "HMAC",
     await hmacKey(secret, "sign"),
-    encoder.encode(body),
+    signedInput(purpose, body),
   );
   return `${body}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
@@ -60,6 +68,7 @@ export async function sealPayload(
 export async function openPayload(
   value: string,
   secret: string,
+  purpose: CookiePurpose,
 ): Promise<Record<string, unknown> | null> {
   try {
     const parts = value.split(".");
@@ -69,7 +78,7 @@ export async function openPayload(
       "HMAC",
       await hmacKey(secret, "verify"),
       base64UrlDecode(signature),
-      encoder.encode(body),
+      signedInput(purpose, body),
     );
     if (!ok) return null;
     const parsed: unknown = JSON.parse(decoder.decode(base64UrlDecode(body)));
@@ -90,7 +99,11 @@ export async function writeVoter(
   now: Date,
   secure: boolean,
 ): Promise<void> {
-  const value = await sealPayload({ sub: id, exp: now.getTime() + VOTER_SESSION_TTL_MS }, secret);
+  const value = await sealPayload(
+    { sub: id, exp: now.getTime() + VOTER_SESSION_TTL_MS },
+    secret,
+    "voter",
+  );
   cookies.set(voterCookieName(secure), value, {
     path: "/",
     httpOnly: true,
@@ -109,7 +122,7 @@ export async function readVoter(
   for (const name of [voterCookieName(true), voterCookieName(false)]) {
     const value = cookies.get(name);
     if (!value) continue;
-    const payload = await openPayload(value, secret);
+    const payload = await openPayload(value, secret, "voter");
     if (
       payload &&
       typeof payload.sub === "string" &&

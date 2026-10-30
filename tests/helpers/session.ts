@@ -11,7 +11,7 @@ export async function signInFixture(
   voterId: "test-voter" | "test-other",
 ): Promise<void> {
   const exp = Date.now() + VOTER_SESSION_TTL_MS;
-  const value = await sealPayload({ sub: voterId, exp }, TEST_SECRET);
+  const value = await sealPayload({ sub: voterId, exp }, TEST_SECRET, "voter");
   await context.addCookies([
     {
       name: voterCookieName(false),
