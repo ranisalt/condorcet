@@ -62,29 +62,14 @@ main,
 }
 
 .brand-mark {
-  display: inline-flex;
-  height: 1.8rem;
-  align-items: end;
-  gap: 0.18rem;
-}
-
-.brand-mark i {
   display: block;
-  width: 0.32rem;
-  border-radius: 0.08rem 0.08rem 0 0;
-  background: var(--green);
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
 }
 
-.brand-mark i:nth-child(1) {
-  height: 0.78rem;
-}
-
-.brand-mark i:nth-child(2) {
-  height: 1.45rem;
-}
-
-.brand-mark i:nth-child(3) {
-  height: 1.1rem;
+.brand-prefix {
+  font-weight: 500;
 }
 
 .brand-name {
