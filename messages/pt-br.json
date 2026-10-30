@@ -7,7 +7,7 @@
   "nav_ballot": "Meu voto",
   "nav_results": "Resultados",
   "simulation_warning": "Esta é uma simulação para fins de estudo. Não é uma eleição oficial, não representa uma pesquisa eleitoral e seus resultados não refletem a realidade.",
-  "privacy_warning": "Seu voto não é anônimo. O login passa por um serviço separado, a Supabase, que conhece sua conta Google. O simulador recebe dela apenas um identificador aleatório e guarda seu voto associado a ele, sem e-mail nem nome. Quem administra os dois serviços pode cruzar os dados e saber como você votou. A Supabase e a Cloudflare, que hospeda o simulador, também podem acessar os dados que guardam. Não use este simulador se quiser manter suas preferências políticas em segredo.",
+  "privacy_warning": "Seu voto não é anônimo. O login passa por um serviço separado, a Supabase, que conhece sua conta Google. O simulador recebe dela apenas um identificador aleatório e guarda seu voto associado a ele, sem e-mail nem nome. Quem administra os dois serviços pode cruzar os dados e saber como você votou. A Supabase e a Cloudflare, que hospeda o simulador, também podem acessar os dados que guardam. Em caso de erro, o simulador envia ao Sentry, um serviço de monitoramento, dados técnicos como a página e o navegador usados, sem o conteúdo do voto nem o identificador. Não use este simulador se quiser manter suas preferências políticas em segredo.",
   "login_explanation": "O login usa apenas o Google, por meio da Supabase, para dificultar votos repetidos. Isso não garante um voto por pessoa, porque uma pessoa pode ter várias contas. Não há cadastro com senha.",
   "sign_in": "Entrar com Google",
   "sign_out": "Sair",

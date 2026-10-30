@@ -1,4 +1,4 @@
-import { building } from "$app/env";
+import { building, dev } from "$app/env";
 import { defineEnvVars } from "@sveltejs/kit/env";
 import { parseResultsThreshold } from "./lib/results-threshold.ts";
 
@@ -14,7 +14,29 @@ function runtimeSecret(name: string) {
   };
 }
 
+/** Sentry settings are public and static: inlined at build time, shared by browser and Worker. */
+function sentry<T>(schema: (value: string | undefined) => T) {
+  return { public: true, static: true, schema } as const;
+}
+
+function sampleRate(name: string, fallback: number) {
+  return (value: string | undefined): number => {
+    if (value === undefined || value === "") return fallback;
+    const rate = Number(value);
+    if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error(`${name} must be 0 to 1`);
+    return rate;
+  };
+}
+
 export const variables = defineEnvVars({
+  // Without a DSN the SDK sends nothing, as in local development and tests.
+  SENTRY_DSN: sentry((value) => {
+    if (value === undefined || value === "") return "";
+    if (!URL.canParse(value)) throw new Error("SENTRY_DSN must be a URL");
+    return value;
+  }),
+  SENTRY_ENVIRONMENT: sentry((value) => value || (dev ? "development" : "production")),
+  SENTRY_TRACES_SAMPLE_RATE: sentry(sampleRate("SENTRY_TRACES_SAMPLE_RATE", dev ? 1 : 0.25)),
   PUBLIC_SUPABASE_URL: {
     public: true,
     static: true,

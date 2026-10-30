@@ -7,6 +7,7 @@ import { defineConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 import adapter from "@sveltejs/adapter-cloudflare";
 import { sveltekit } from "@sveltejs/kit/vite";
+import { sentrySvelteKit } from "@sentry/sveltekit/vite";
 
 export default defineConfig(({ mode }) => {
   let envDir: string | undefined;
@@ -89,12 +90,17 @@ export default defineConfig(({ mode }) => {
             "style-src": ["self", "unsafe-inline"],
             "img-src": ["self", "data:"],
             // The OAuth consent page talks to the Supabase auth API from the browser.
-            "connect-src": ["self", "https://*.supabase.co"],
+            // Sentry receives errors and traces from the browser.
+            "connect-src": ["self", "https://*.supabase.co", "https://*.sentry.io"],
             // The login action redirects to the Supabase authorize endpoint.
             "form-action": ["self", "https://*.supabase.co"],
             "frame-ancestors": ["none"],
             "base-uri": ["self"],
             "object-src": ["none"],
+            // Sentry's security endpoint; violations go unreported without it.
+            ...(process.env.SENTRY_CSP_REPORT_URI && {
+              "report-uri": [process.env.SENTRY_CSP_REPORT_URI],
+            }),
           },
         },
       }),
@@ -103,6 +109,14 @@ export default defineConfig(({ mode }) => {
         outdir: "./src/lib/paraglide",
         emitTsDeclarations: true,
       }),
+      // Uploads source maps to Sentry (needs SENTRY_ORG and SENTRY_PROJECT too). Without a token
+      // the maps would be left in the public assets, so the plugin stays off.
+      process.env.SENTRY_AUTH_TOKEN && !process.env.VITEST
+        ? sentrySvelteKit({
+            telemetry: false,
+            sourcemaps: { filesToDeleteAfterUpload: [".svelte-kit/cloudflare/**/*.map"] },
+          })
+        : null,
     ],
     test: {
       expect: { requireAssertions: true },

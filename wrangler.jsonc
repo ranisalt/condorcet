@@ -28,6 +28,7 @@
   "secrets": {
     "required": ["OIDC_CLIENT_SECRET", "SESSION_SECRET"],
   },
+  "upload_source_maps": true,
   "workers_dev": true,
   "preview_urls": true,
 }

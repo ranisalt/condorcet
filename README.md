@@ -87,6 +87,11 @@ The all-zero database ID in `wrangler.jsonc` only works locally. Local migration
 | `PUBLIC_SUPABASE_PUBLISHABLE_KEY` | build (inlined) | no     | Lets the consent page call Supabase from the browser.                                                                                    |
 | `OIDC_CLIENT_ID`                  | build (inlined) | no     | The OAuth client registered above.                                                                                                       |
 | `RESULTS_THRESHOLD`               | build (inlined) | no     | Valid ballots needed before results unlock. Optional: if unset, results stay locked and the pages say the minimum will be defined later. |
+| `SENTRY_DSN`                      | build (inlined) | no     | Sentry project `condorcet/condorcet`. Optional: without it nothing is sent to Sentry.                                                    |
+| `SENTRY_ENVIRONMENT`              | build (inlined) | no     | Optional; defaults to `production` (`development` in dev).                                                                               |
+| `SENTRY_TRACES_SAMPLE_RATE`       | build (inlined) | no     | Optional, 0 to 1; defaults to `0.25` (`1` in dev).                                                                                       |
+| `SENTRY_CSP_REPORT_URI`           | build           | no     | Optional Sentry security endpoint for CSP violation reports.                                                                             |
+| `SENTRY_AUTH_TOKEN`               | build           | yes    | Optional; with `SENTRY_ORG`/`SENTRY_PROJECT`, uploads source maps and removes them from the public assets.                               |
 | `OIDC_CLIENT_SECRET`              | runtime         | yes    | The OAuth client's secret.                                                                                                               |
 | `SESSION_SECRET`                  | runtime         | yes    | HMAC key for the signed cookies. Generate with `openssl rand -base64 48`.                                                                |
 
