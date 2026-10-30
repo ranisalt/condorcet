@@ -13,7 +13,9 @@ test("shows public election status, count-only progress, and Google-only entry",
   await expect(
     page.getByRole("contentinfo").getByText(/Esta é uma simulação para fins de estudo/),
   ).toBeVisible();
-  await expect(page.getByText(/O login usa apenas o Google/)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Veja como os dados são tratados em Como funciona." }),
+  ).toHaveAttribute("href", /how-it-works#privacidade$/);
   await expect(page.getByText("0 de 10.000 votos válidos", { exact: true })).toBeVisible();
   await expect(
     page.getByText(/Os resultados aparecem a partir de 10\.000 votos válidos/),

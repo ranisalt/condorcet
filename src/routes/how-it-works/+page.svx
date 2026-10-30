@@ -95,4 +95,21 @@ O método ordena as vitórias diretas pela margem e depois pela quantidade de vo
 Os métodos preservam todas as candidaturas empatadas. Nem a ordem da lista nem o identificador desempatam. No método de Tideman, todas as ordens empatadas entram no cálculo. Se a exploração das ordens atingir o limite de cálculo, o resultado fica marcado como não resolvido, e o método não escolhe uma vencedora arbitrária.
 
 </section>
+
+<section id="privacidade">
+
+## Privacidade e tratamento dos dados
+
+Seu voto não é anônimo. Três serviços participam do simulador, e cada um vê uma parte diferente dos dados.
+
+- **Supabase** faz o login com Google. Ela conhece sua conta Google, com e-mail e nome, e envia ao simulador apenas um identificador aleatório.
+- **Cloudflare** hospeda o site e guarda as cédulas no banco de dados. Ela pode acessar as cédulas e o identificador que as acompanha.
+- **Sentry** é um serviço de monitoramento de erros. Quando ocorre um erro, recebe relatórios técnicos, como a página e o navegador usados. Esses relatórios não contêm o conteúdo do voto nem o identificador.
+
+O simulador guarda a cédula junto com o identificador aleatório, sem e-mail nem nome. Ele não guarda a sua conta Google. O banco de dados guarda números no lugar dos nomes das candidaturas. Isso não é criptografia. Com acesso ao banco e ao código do simulador, é possível descobrir a ordem de cada voto. Quem administra a Supabase e o simulador pode cruzar os dados e descobrir como você votou. A Supabase e a Cloudflare também podem acessar os dados que guardam.
+
+Não use este simulador se quiser manter suas preferências políticas em segredo.
+
+</section>
 </article>
+

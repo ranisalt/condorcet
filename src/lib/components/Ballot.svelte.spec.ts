@@ -88,6 +88,8 @@ it("supports keyboard activation of candidate controls", async () => {
   });
 
   await userEvent.tab();
+  await expect.element(page.getByText(m.privacy_details_summary())).toHaveFocus();
+  await userEvent.tab();
   const firstAdd = page.getByRole("button", { name: m.add_candidate({ name: "Primeira" }) });
   await expect.element(firstAdd).toHaveFocus();
   await userEvent.keyboard("{Enter}");
@@ -129,4 +131,19 @@ it("disables ballot editing and saving after closure", async () => {
     .element(page.getByRole("button", { name: m.remove_candidate({ name: "Primeira" }) }))
     .toBeDisabled();
   await expect.element(page.getByRole("button", { name: m.cast_vote() })).toBeDisabled();
+});
+
+it("keeps the privacy summary visible and the details closed until opened", async () => {
+  await render(Ballot, {
+    props: { election, initialDraft: { ranked: [], order: [87, 0] }, open: true },
+  });
+
+  await expect.element(page.getByText(m.privacy_summary())).toBeVisible();
+  await expect.element(page.getByText(m.privacy_warning())).not.toBeVisible();
+  await expect.element(page.getByText(m.privacy_obfuscation())).not.toBeVisible();
+
+  await page.getByText(m.privacy_details_summary()).click();
+
+  await expect.element(page.getByText(m.privacy_warning())).toBeVisible();
+  await expect.element(page.getByText(m.privacy_obfuscation())).toBeVisible();
 });

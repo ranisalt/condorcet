@@ -25,3 +25,19 @@ it("renders the markdown sections, including those inside the method cards, as h
     await expect.element(page.getByRole("heading", { level: 2, name })).toBeInTheDocument();
   }
 });
+
+it("explains each service that handles data in the privacy section, linked by its fragment", async () => {
+  await render(MethodPage);
+
+  const section = document.getElementById("privacidade");
+  expect(section).not.toBeNull();
+  await expect
+    .element(page.getByRole("heading", { level: 2, name: "Privacidade e tratamento dos dados" }))
+    .toBeInTheDocument();
+  const text = section?.textContent ?? "";
+  for (const service of ["Supabase", "Cloudflare", "Sentry"]) {
+    expect(text).toContain(service);
+  }
+  expect(text).toMatch(/não é anônimo/);
+  expect(text).toMatch(/identificador aleatório/);
+});

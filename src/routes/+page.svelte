@@ -49,12 +49,9 @@
         {/if}
       </div>
 
-      <aside class="notice-card notice-card--privacy" aria-labelledby="privacy-heading">
-        <h2 id="privacy-heading">{m.privacy_heading()}</h2>
-        <p>{m.privacy_warning()}</p>
-        <p>{m.privacy_obfuscation()}</p>
-        <p>{m.login_explanation()}</p>
-      </aside>
+      <p class="privacy-link">
+        <a href="{resolve('how-it-works')}#privacidade">{m.home_privacy_link()}</a>
+      </p>
     </div>
 
     <figure class="preference-figure" aria-label={m.preference_illustration_label()}>

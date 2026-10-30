@@ -95,8 +95,12 @@
   <div class="ballot-notices">
     <section class="notice-card notice-card--privacy" aria-labelledby="ballot-privacy-heading">
       <h2 id="ballot-privacy-heading">{m.privacy_heading()}</h2>
-      <p>{m.privacy_warning()}</p>
-      <p>{m.privacy_obfuscation()}</p>
+      <p>{m.privacy_summary()}</p>
+      <details class="privacy-details">
+        <summary>{m.privacy_details_summary()}</summary>
+        <p>{m.privacy_warning()}</p>
+        <p>{m.privacy_obfuscation()}</p>
+      </details>
     </section>
     <ul class="rule-note">
       <li>{m.omitted_rule()}</li>

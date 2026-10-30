@@ -12,15 +12,27 @@ const data = {
   },
 } satisfies PageProps["data"];
 
-it("places all simulation, account, hosting, and obfuscation disclosures before acknowledgment", async () => {
+it("places the simulation notice and a one-line privacy summary before acknowledgment", async () => {
   await render(AcknowledgmentPage, { props: { data, form: null, params: {} } });
 
   await expect.element(page.getByRole("heading", { name: m.ack_title() })).toBeInTheDocument();
   await expect.element(page.getByText(m.simulation_warning())).toBeInTheDocument();
-  await expect.element(page.getByText(m.privacy_warning())).toBeInTheDocument();
-  await expect.element(page.getByText(m.privacy_obfuscation())).toBeInTheDocument();
-  await expect.element(page.getByText(m.login_explanation())).toBeInTheDocument();
-  await expect.element(page.getByRole("checkbox", { name: m.ack_label() })).toBeInTheDocument();
+  await expect.element(page.getByText(m.privacy_summary())).toBeVisible();
+  await expect.element(page.getByRole("checkbox", { name: m.ack_label() })).toBeRequired();
+});
+
+it("keeps the detailed privacy disclosures closed until the visitor opens them", async () => {
+  await render(AcknowledgmentPage, { props: { data, form: null, params: {} } });
+
+  await expect.element(page.getByText(m.privacy_warning())).not.toBeVisible();
+  await expect.element(page.getByText(m.privacy_obfuscation())).not.toBeVisible();
+  await expect.element(page.getByText(m.login_explanation())).not.toBeVisible();
+
+  await page.getByText(m.privacy_details_summary()).click();
+
+  await expect.element(page.getByText(m.privacy_warning())).toBeVisible();
+  await expect.element(page.getByText(m.privacy_obfuscation())).toBeVisible();
+  await expect.element(page.getByText(m.login_explanation())).toBeVisible();
 });
 
 it("shows the stale-election message when the action rejects an outdated election", async () => {

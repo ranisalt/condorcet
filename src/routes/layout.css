@@ -784,6 +784,25 @@ progress::-moz-progress-bar {
   background: #f1f4f1;
 }
 
+.privacy-details {
+  margin-block-start: 0.75rem;
+}
+
+.privacy-details summary {
+  color: var(--green);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.privacy-details p {
+  margin-block-start: 0.6rem;
+}
+
+.privacy-link {
+  margin-block-start: 1rem;
+  font-size: 0.875rem;
+}
+
 .acknowledgment-form {
   display: grid;
   justify-items: start;

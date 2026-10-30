@@ -27,7 +27,6 @@ test("keeps the home hierarchy compact and the disclaimer only in the footer", a
     "font-weight",
     "700",
   );
-  await expect(main.getByText(/Seu voto não é anônimo\./)).toHaveCSS("font-size", "14px");
   const progress = main.getByRole("region", { name: "Participação na simulação" });
   for (const side of ["top", "right", "bottom", "left"]) {
     await expect(progress).toHaveCSS(`padding-${side}`, "32px");

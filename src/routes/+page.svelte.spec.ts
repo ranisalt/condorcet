@@ -74,12 +74,13 @@ it("says the results minimum will be defined later when no threshold is configur
   await expect.element(page.getByText("Mínimo atingido", { exact: true })).not.toBeInTheDocument();
 });
 
-it("discloses account-linked access and simulated participation before sign-in", async () => {
+it("keeps the privacy disclosure off home and links to it from the sign-in area", async () => {
   await render(HomePage, { props: { data, form: null, params: {} } });
 
-  await expect.element(page.getByText(m.privacy_warning())).toBeInTheDocument();
-  await expect.element(page.getByText(m.privacy_obfuscation())).toBeInTheDocument();
-  await expect.element(page.getByText(m.login_explanation())).toBeInTheDocument();
+  await expect.element(page.getByText(m.privacy_warning())).not.toBeInTheDocument();
   await expect.element(page.getByText(m.simulation_warning())).not.toBeInTheDocument();
   await expect.element(page.getByRole("button", { name: m.sign_in() })).toBeInTheDocument();
+  await expect
+    .element(page.getByRole("link", { name: m.home_privacy_link() }))
+    .toHaveAttribute("href", "/how-it-works#privacidade");
 });

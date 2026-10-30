@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { m } from "#lib/paraglide/messages.js";
   import type { PageProps } from "./$types";
 
@@ -25,9 +26,14 @@
     aria-labelledby="ack-privacy-heading"
   >
     <h2 id="ack-privacy-heading">{m.privacy_heading()}</h2>
-    <p>{m.privacy_warning()}</p>
-    <p>{m.privacy_obfuscation()}</p>
-    <p>{m.login_explanation()}</p>
+    <p>{m.privacy_summary()}</p>
+    <details class="privacy-details">
+      <summary>{m.privacy_details_summary()}</summary>
+      <p>{m.privacy_warning()}</p>
+      <p>{m.privacy_obfuscation()}</p>
+      <p>{m.login_explanation()}</p>
+      <p><a href="{resolve('how-it-works')}#privacidade">{m.home_privacy_link()}</a></p>
+    </details>
   </section>
 
   <form class="acknowledgment-form" method="POST">
