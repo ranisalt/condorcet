@@ -58,6 +58,8 @@ Em um exemplo fictício com 100 votos, 35 pessoas preferem A > C > B, 33 prefere
 
 A participação é voluntária e não forma uma amostra representativa. Uma pessoa pode usar várias contas Google. As preferências podem mudar conforme o sistema eleitoral. Os exemplos são fictícios, e os resultados não permitem prever uma eleição real.
 
+Para consultar resultados oficiais de eleições reais, use o [Boletix](https://boletix.rsa.sh), outro projeto nosso que lê os boletins de urna publicados pelo TSE.
+
 </section>
 
 <section id="comparison-methods" class="method-grid" aria-label="Métodos de contagem por preferências ordenadas">
