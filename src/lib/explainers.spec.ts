@@ -8,10 +8,12 @@ import {
   duels,
   firstChoices,
   lockSequence,
+  lockedOrder,
   pairwise,
   squeeze,
   strength,
   strongestPath,
+  supporters,
   total,
   type BallotGroup,
 } from "./explainers.ts";
@@ -44,6 +46,14 @@ describe("squeeze example", () => {
     expect(duel(squeeze, "C", "B")).toMatchObject({ winner: "C", winnerVotes: 67, loserVotes: 33 });
     expect(methods(squeeze).winnerId).toBe(2);
   });
+
+  it("splits the ballots into the groups behind each side of a duel", () => {
+    const forC = supporters(squeeze, "C", "A");
+    const forA = supporters(squeeze, "A", "C");
+    expect(forC.map((g) => g.count)).toEqual([33, 32]);
+    expect(forA.map((g) => g.count)).toEqual([35]);
+    expect(total(forC)).toBe(duel(squeeze, "C", "A").winnerVotes);
+  });
 });
 
 describe("strength example", () => {
@@ -62,12 +72,17 @@ describe("strength example", () => {
       ["A", "B", true],
       ["C", "A", false],
     ]);
+    expect(lockedOrder(strength)).toEqual(["A", "B", "C"]);
   });
 
   it("gives A a stronger path to each rival than any rival has back to A", () => {
-    expect(strongestPath(strength, "A", "B")).toEqual({ path: ["A", "B"], strength: 65 });
-    expect(strongestPath(strength, "B", "A")).toEqual({ path: ["B", "C", "A"], strength: 60 });
-    expect(strongestPath(strength, "A", "C")).toEqual({ path: ["A", "B", "C"], strength: 65 });
-    expect(strongestPath(strength, "C", "A")).toEqual({ path: ["C", "A"], strength: 60 });
+    const summary = (from: "A" | "B" | "C", to: "A" | "B" | "C") => {
+      const { path, strength: s, links } = strongestPath(strength, from, to);
+      return { path, strength: s, links: links.map((d) => d.winnerVotes) };
+    };
+    expect(summary("A", "B")).toEqual({ path: ["A", "B"], strength: 65, links: [65] });
+    expect(summary("B", "A")).toEqual({ path: ["B", "C", "A"], strength: 60, links: [75, 60] });
+    expect(summary("A", "C")).toEqual({ path: ["A", "B", "C"], strength: 65, links: [65, 75] });
+    expect(summary("C", "A")).toEqual({ path: ["C", "A"], strength: 60, links: [60] });
   });
 });

@@ -31,8 +31,13 @@ export function total(ballots: readonly BallotGroup[]): number {
   return ballots.reduce((sum, { count }) => sum + count, 0);
 }
 
+/** The ballot groups that rank x above y. */
+export function supporters(ballots: readonly BallotGroup[], x: Letter, y: Letter): BallotGroup[] {
+  return ballots.filter(({ order }) => order.indexOf(x) < order.indexOf(y));
+}
+
 function prefers(ballots: readonly BallotGroup[], x: Letter, y: Letter): number {
-  return total(ballots.filter(({ order }) => order.indexOf(x) < order.indexOf(y)));
+  return total(supporters(ballots, x, y));
 }
 
 export function pairwise(ballots: readonly BallotGroup[]): PairwiseCount[] {
@@ -93,12 +98,21 @@ export function lockSequence(ballots: readonly BallotGroup[]): { duel: Duel; loc
   });
 }
 
+/** The ranking left by the locked duels, from the candidate nobody beats down. */
+export function lockedOrder(ballots: readonly BallotGroup[]): Letter[] {
+  const locked = lockSequence(ballots)
+    .filter((step) => step.locked)
+    .map((step) => step.duel);
+  const beatenBy = (letter: Letter) => locked.filter((d) => d.loser === letter).length;
+  return [...letters].sort((a, b) => beatenBy(a) - beatenBy(b));
+}
+
 /** Schulze strongest path for exactly three candidates: the direct win or a two-step chain. */
 export function strongestPath(
   ballots: readonly BallotGroup[],
   from: Letter,
   to: Letter,
-): { path: Letter[]; strength: number } {
+): { path: Letter[]; strength: number; links: Duel[] } {
   const win = (x: Letter, y: Letter) => {
     const d = duel(ballots, x, y);
     return d.winner === x ? d.winnerVotes : 0;
@@ -106,7 +120,10 @@ export function strongestPath(
   const middle = letters.find((l) => l !== from && l !== to) ?? from;
   const direct = win(from, to);
   const indirect = Math.min(win(from, middle), win(middle, to));
-  return direct >= indirect
-    ? { path: [from, to], strength: direct }
-    : { path: [from, middle, to], strength: indirect };
+  const path = direct >= indirect ? [from, to] : [from, middle, to];
+  return {
+    path,
+    strength: Math.max(direct, indirect),
+    links: path.slice(1).map((step, index) => duel(ballots, path[index], step)),
+  };
 }
