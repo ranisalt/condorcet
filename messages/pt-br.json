@@ -134,5 +134,16 @@
   "consent_sign_in_intro": "Entre com Google para continuar. O simulador recebe apenas um identificador aleatório da sua conta, sem e-mail nem nome.",
   "consent_redirecting": "Acesso autorizado. Voltando ao simulador…",
   "consent_error_missing_authorization_id": "Este link de autorização está incompleto. Volte ao simulador e tente entrar novamente.",
-  "consent_error_api_error": "Não foi possível concluir a autorização. Volte ao simulador e tente entrar novamente."
+  "consent_error_api_error": "Não foi possível concluir a autorização. Volte ao simulador e tente entrar novamente.",
+  "explainer_people_one": "1 pessoa",
+  "explainer_people": "{count} pessoas",
+  "explainer_beats": "{winner} vence {loser} por {winnerVotes} a {loserVotes}",
+  "explainer_locked": "travada",
+  "explainer_skipped": "ignorada, fecharia um ciclo",
+  "explainer_margin": "margem de {margin}",
+  "explainer_candidate": "Candidatura",
+  "explainer_wins": "Vitórias",
+  "explainer_losses": "Derrotas",
+  "explainer_score": "Saldo",
+  "explainer_path_strength": "força {strength}"
 }

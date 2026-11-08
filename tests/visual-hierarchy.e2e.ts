@@ -62,6 +62,9 @@ test("stacks method explanations at desktop and mobile widths", async ({ page })
   }
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
     await page.screenshot({ path: test.info().outputPath(`methods-${width}.png`), fullPage: true });
     const boxes = [];
     for (const name of [
