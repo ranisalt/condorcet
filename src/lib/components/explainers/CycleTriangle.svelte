@@ -24,8 +24,8 @@
       y1: from.y + uy * radius,
       x2: to.x - ux * (radius + 6),
       y2: to.y - uy * (radius + 6),
-      labelX: (from.x + to.x) / 2 - uy * 18,
-      labelY: (from.y + to.y) / 2 + ux * 18,
+      labelX: (from.x + to.x) / 2 - uy * 28,
+      labelY: (from.y + to.y) / 2 + ux * 28,
     };
   }
 
