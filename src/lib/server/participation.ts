@@ -1,9 +1,8 @@
-import { error, redirect } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import { env } from "cloudflare:workers";
-import { m } from "#lib/paraglide/messages.js";
 import { checkElectionId, type Election } from "../election.ts";
 import { readParticipation, type Participation } from "./ballots.ts";
-import { currentElection } from "./election.ts";
+import { requireCurrentElection } from "./election.ts";
 import type { VoterId } from "./voter-session.ts";
 
 /** The pages of the Participation journey, in order: acknowledge, rank, confirm. */
@@ -32,8 +31,7 @@ export async function enterStep(
   electionIds?: readonly FormDataEntryValue[],
 ): Promise<JourneyEntry | { error: "invalid" | "stale" }> {
   if (locals.voter === undefined) redirect(303, "/");
-  const election = currentElection;
-  if (election === null) error(404, m.no_election());
+  const election = requireCurrentElection();
 
   if (electionIds !== undefined) {
     const problem = checkElectionId(electionIds, election);

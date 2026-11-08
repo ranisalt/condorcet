@@ -68,11 +68,8 @@ export function checkElectionId(
   return electionIds[0] === election.id ? null : "stale";
 }
 
+/** Reads a draft's candidate order and ranking. The caller checks the election id. */
 export function parseDraft(form: FormData, election: Election): BallotDraft {
-  if (checkElectionId(form.getAll("electionId"), election) !== null) {
-    throw new InvalidBallotError("Election ID is missing, duplicated, malformed, or stale");
-  }
-
   const order = parseRankedIds(form.getAll("candidateOrderId"), election.candidates);
   if (order.length !== election.candidates.length) {
     throw new InvalidBallotError("Candidate order must include every candidate exactly once");

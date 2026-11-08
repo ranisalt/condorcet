@@ -11,3 +11,5 @@
 **Voter session**: the signed cookie that carries the voter's opaque `sub` for one day.
 
 **Results gate**: the rule that hides results until the voter has submitted and the valid-ballot count reaches the `RESULTS_THRESHOLD` deployment setting. Checked on a cheap precheck, then again on the snapshot the outcome is computed from.
+
+**Ballot submission**: a ballot form POST (edit or save) for the current election. `submitBallotForm` in `src/lib/server/ballot-submission.ts` owns its rules: the election id check, the closed check, draft parsing and the single edit operation, saving, and the HTTP status of each rejection (stale 409, closed 403, invalid 400, save failure 503).

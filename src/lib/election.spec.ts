@@ -65,23 +65,7 @@ it("rejects a draft that ranks an unknown candidate", () => {
   expect(() => parseDraft(form, election)).toThrow();
 });
 
-it("requires exactly one matching election ID and a complete unique order", () => {
-  const formWithOrder = () => {
-    const form = new FormData();
-    form.append("candidateOrderId", "87");
-    form.append("candidateOrderId", "0");
-    form.append("candidateOrderId", "130");
-    return form;
-  };
-  for (const electionIds of [[], ["wrong"], [election.id, election.id]]) {
-    const form = formWithOrder();
-    for (const id of electionIds) form.append("electionId", id);
-    expect(() => parseDraft(form, election)).toThrow();
-  }
-  const fileElectionId = formWithOrder();
-  fileElectionId.append("electionId", new File([election.id], "election.txt"));
-  expect(() => parseDraft(fileElectionId, election)).toThrow();
-
+it("requires a complete unique candidate order", () => {
   for (const order of [
     ["87", "0"],
     ["87", "0", "130", "130"],

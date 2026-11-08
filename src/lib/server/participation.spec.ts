@@ -1,4 +1,5 @@
 import { isHttpError, isRedirect } from "@sveltejs/kit";
+import type * as ServerElection from "./election.ts";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Election } from "#lib/election.ts";
 import { acknowledgeElection, replaceBallot } from "./ballots.ts";
@@ -20,11 +21,10 @@ const state = vi.hoisted(() => {
   return value;
 });
 
-vi.mock("./election.ts", () => ({
-  get currentElection() {
-    return state.election;
-  },
-}));
+vi.mock("./election.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof ServerElection>();
+  return { requireCurrentElection: () => actual.electionOrNotFound(state.election) };
+});
 
 import { enterStep, type JourneyStep } from "./participation.ts";
 

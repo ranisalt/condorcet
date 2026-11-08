@@ -1,7 +1,8 @@
 import { expect, it, vi } from "vitest";
+import type * as ServerElection from "#lib/server/election.ts";
 import { isRedirect } from "@sveltejs/kit";
 import type { RequestEvent } from "./$types";
-import { acknowledgeElection, readOwnRanking, replaceBallot } from "#lib/server/ballots.ts";
+import { acknowledgeElection } from "#lib/server/ballots.ts";
 import type { Election } from "#lib/election.ts";
 import type { VoterId } from "#lib/server/voter-session.ts";
 import { openTestD1 } from "../../test/d1.ts";
@@ -24,18 +25,17 @@ const state = vi.hoisted(() => {
   return value;
 });
 
-vi.mock("#lib/server/election.ts", () => ({
-  get currentElection() {
-    return state.election;
-  },
-}));
+vi.mock("#lib/server/election.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof ServerElection>();
+  return { requireCurrentElection: () => actual.electionOrNotFound(state.election) };
+});
 
 import { actions } from "./+page.server.ts";
 
 const election: Election = {
   id: "8bc131c5-3228-46e4-b310-3555653d815d",
   titleKey: "election_br_2026_title",
-  closesAt: "2026-10-15T12:00:00.000Z",
+  closesAt: null,
   sources: ["https://example.invalid/source"],
   candidates: [
     {
@@ -55,8 +55,6 @@ const election: Election = {
   ],
 };
 
-const nowBeforeClose = new Date("2026-10-15T11:59:59.999Z");
-
 function makeForm(ranked: readonly number[], operation?: string): FormData {
   const form = new FormData();
   form.append("electionId", election.id);
@@ -67,11 +65,7 @@ function makeForm(ranked: readonly number[], operation?: string): FormData {
   return form;
 }
 
-async function makeEvent(
-  _d1: D1Database,
-  ranked: readonly number[],
-  operation?: string,
-): Promise<RequestEvent> {
+function makeEvent(ranked: readonly number[], operation?: string): RequestEvent {
   const request = new Request("http://localhost:4173/ballot?/save", {
     method: "POST",
     body: makeForm(ranked, operation),
@@ -82,80 +76,32 @@ async function makeEvent(
   } as RequestEvent;
 }
 
-async function expectClosedFailure(result: unknown) {
-  if (typeof result !== "object" || result === null || !("status" in result)) {
-    throw new Error("Expected a closed-election action failure");
-  }
-  expect(result.status).toBe(403);
-  const data = "data" in result ? result.data : undefined;
-  if (typeof data !== "object" || data === null || !("error" in data)) {
-    throw new Error("Expected a closed-election failure payload");
-  }
-  expect(data.error).toBe("closed");
-}
-
-it("allows edit/save immediately before closing and rejects both at and after the boundary", async () => {
+// Ballot submission rules are specified in #lib/server/ballot-submission.spec.ts; this covers the
+// adapter: success becomes the draft or the thanks redirect, a rejection becomes fail(status).
+it("returns the edited draft, redirects a save to thanks, and fails with the rejection status", async () => {
   const { d1, dispose } = await openTestD1();
   state.d1 = d1;
   state.election = election;
-  vi.useFakeTimers({ toFake: ["Date"] });
-
   try {
-    const fixedNow = new Date("2026-10-15T12:00:00.000Z");
-    await acknowledgeElection(d1, election.id, "test-voter" as VoterId, nowBeforeClose);
-    await replaceBallot(d1, election.id, "test-voter" as VoterId, [130, 87], nowBeforeClose);
+    await acknowledgeElection(d1, election.id, "test-voter" as VoterId, new Date());
+    expect(await actions.edit(makeEvent([130, 87], "up:87"))).toEqual({
+      draft: { ranked: [87, 130], order: [87, 130] },
+    });
 
-    vi.setSystemTime(nowBeforeClose);
-    const editBefore = await actions.edit(await makeEvent(d1, [130, 87], "up:87"));
-    expect(editBefore).toEqual({ draft: { ranked: [87, 130], order: [87, 130] } });
-    expect(await readOwnRanking(d1, election.id, "test-voter" as VoterId)).toEqual([130, 87]);
-
-    let redirected = false;
+    let thrown: unknown = null;
     try {
-      await actions.save(await makeEvent(d1, [87]));
+      await actions.save(makeEvent([87]));
     } catch (cause) {
-      redirected = isRedirect(cause) && cause.status === 303;
-      if (!redirected) throw cause;
+      thrown = cause;
     }
-    expect(redirected).toBe(true);
-    expect(await readOwnRanking(d1, election.id, "test-voter" as VoterId)).toEqual([87]);
+    if (!isRedirect(thrown)) throw thrown;
+    expect([thrown.status, thrown.location]).toEqual([303, `/thanks?electionId=${election.id}`]);
 
-    for (const closeTime of [fixedNow, new Date(fixedNow.getTime() + 1)]) {
-      vi.setSystemTime(closeTime);
-      const editAtClose = await actions.edit(await makeEvent(d1, [130], "add:87"));
-      await expectClosedFailure(editAtClose);
-      const saveAtClose = await actions.save(await makeEvent(d1, [130]));
-      await expectClosedFailure(saveAtClose);
-      expect(await readOwnRanking(d1, election.id, "test-voter" as VoterId)).toEqual([87]);
-    }
+    const rejected = await actions.edit(makeEvent([87]));
+    expect(rejected).toMatchObject({ status: 400, data: { error: "invalid" } });
   } finally {
-    vi.useRealTimers();
     state.d1 = null;
     state.election = null;
     await dispose();
   }
-});
-
-it("keeps edit and save closed to signed-out POSTs by redirecting to the home page", async () => {
-  state.election = election;
-  for (const action of [actions.edit, actions.save]) {
-    const event = {
-      request: new Request("http://localhost:4173/ballot?/save", {
-        method: "POST",
-        body: makeForm([87], "add:87"),
-      }),
-      locals: {},
-    } as unknown as RequestEvent;
-    let thrown: unknown = null;
-    try {
-      await action(event);
-    } catch (cause) {
-      thrown = cause;
-    }
-    expect(isRedirect(thrown)).toBe(true);
-    if (!isRedirect(thrown)) throw thrown;
-    expect(thrown.status).toBe(303);
-    expect(thrown.location).toBe("/");
-  }
-  state.election = null;
 });

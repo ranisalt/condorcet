@@ -1,3 +1,5 @@
+import { error } from "@sveltejs/kit";
+import { m } from "#lib/paraglide/messages.js";
 import electionConfigJson from "./elections.json";
 import {
   electionTitleKey,
@@ -157,3 +159,13 @@ function freezeTree<T>(value: T): T {
 
 const validatedConfig = validateElectionConfig(electionConfigJson);
 export const currentElection = freezeTree(selectElection(validatedConfig));
+
+/** The election, or the 404 every page that needs one answers when none is configured. */
+export function electionOrNotFound(election: Election | null): Election {
+  if (election === null) error(404, m.no_election());
+  return election;
+}
+
+export function requireCurrentElection(): Election {
+  return electionOrNotFound(currentElection);
+}
