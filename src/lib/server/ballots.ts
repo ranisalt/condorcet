@@ -17,12 +17,12 @@ export async function acknowledgeElection(
     .onConflictDoNothing({ target: [electionParticipant.electionId, electionParticipant.voterId] });
 }
 
-export async function readParticipation(
-  d1: D1Database,
+export function buildParticipationQuery(
+  db: ReturnType<typeof getDb>,
   electionId: string,
   voterId: string,
-): Promise<Participation | null> {
-  const rows = await getDb(d1)
+) {
+  return db
     .select({
       acknowledgedAt: electionParticipant.acknowledgedAt,
       submittedAt: electionParticipant.submittedAt,
@@ -32,6 +32,14 @@ export async function readParticipation(
       and(eq(electionParticipant.electionId, electionId), eq(electionParticipant.voterId, voterId)),
     )
     .limit(1);
+}
+
+export async function readParticipation(
+  d1: D1Database,
+  electionId: string,
+  voterId: string,
+): Promise<Participation | null> {
+  const rows = await buildParticipationQuery(getDb(d1), electionId, voterId);
   return rows[0] ?? null;
 }
 

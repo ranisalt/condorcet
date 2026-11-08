@@ -19,8 +19,9 @@ export async function readVoter(
   cookies: Cookies,
   secret: string,
   now: Date,
+  secure: boolean,
 ): Promise<{ id: VoterId } | null> {
-  const payload = await voterCookie.read(cookies, secret, now);
+  const payload = await voterCookie.read(cookies, secret, now, secure);
   if (payload && typeof payload.sub === "string" && payload.sub.length > 0) {
     return { id: payload.sub as VoterId };
   }

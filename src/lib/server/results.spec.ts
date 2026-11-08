@@ -1,3 +1,4 @@
+import type { VoterId } from "./voter-session.ts";
 import { expect, it } from "vitest";
 import type { Election } from "../election.ts";
 import { summarizeCondorcet } from "../condorcet.ts";
@@ -82,8 +83,8 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     await replaceBallot(d1, election.id, "blank", [], at);
 
     expect(await readElectionCounts(d1, election.id)).toEqual({ validCount: 3, blankCount: 1 });
-    const neverSubmitted = await readResults(d1, election, "never", 2);
-    const acknowledgmentOnly = await readResults(d1, election, "ack-only", 2);
+    const neverSubmitted = await readResults(d1, election, "never" as VoterId, 2);
+    const acknowledgmentOnly = await readResults(d1, election, "ack-only" as VoterId, 2);
     expect(neverSubmitted).toEqual({
       state: "locked",
       validCount: 3,
@@ -103,7 +104,7 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
       expect(Object.keys(locked)).not.toContain("blankCount");
     }
 
-    const available = await readResults(d1, election, "blank", 2);
+    const available = await readResults(d1, election, "blank" as VoterId, 2);
     expect(available.state).toBe("available");
     if (available.state !== "available")
       throw new Error("Submitted blank voter should be eligible");
@@ -120,7 +121,7 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
 
     await replaceBallot(d1, election.id, "valid-c", [], new Date("2026-10-16T12:00:00.000Z"));
     await replaceBallot(d1, election.id, "valid-b", [], new Date("2026-10-16T12:00:00.000Z"));
-    const relocked = await readResults(d1, election, "blank", 2);
+    const relocked = await readResults(d1, election, "blank" as VoterId, 2);
     expect(relocked).toEqual({ state: "locked", validCount: 1, threshold: 2, reason: "threshold" });
     expect(Object.keys(relocked)).not.toContain("matrix");
     expect(Object.keys(relocked)).not.toContain("methods");
@@ -128,7 +129,7 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     expect(Object.keys(relocked)).not.toContain("blankCount");
 
     await replaceBallot(d1, election.id, "valid-c", [130], new Date("2026-10-17T12:00:00.000Z"));
-    const unlockedAgain = await readResults(d1, election, "blank", 2);
+    const unlockedAgain = await readResults(d1, election, "blank" as VoterId, 2);
     expect(unlockedAgain.state).toBe("available");
     expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, election)).matrix).toEqual(
       unlockedAgain.state === "available" ? unlockedAgain.matrix : {},
@@ -143,22 +144,22 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
       validCount: 1,
       blankCount: 1,
     });
-    expect(await readResults(d1, boundaryElection, "boundary-blank", 2)).toEqual({
+    expect(await readResults(d1, boundaryElection, "boundary-blank" as VoterId, 2)).toEqual({
       state: "locked",
       validCount: 1,
       threshold: 2,
       reason: "threshold",
     });
-    expect(await readResults(d1, boundaryElection, "boundary-never", 2)).toEqual({
+    expect(await readResults(d1, boundaryElection, "boundary-never" as VoterId, 2)).toEqual({
       state: "locked",
       validCount: 1,
       threshold: 2,
       reason: "not-submitted",
     });
-    expect(await readResults(d1, boundaryElection, "boundary-valid", 1)).toMatchObject({
+    expect(await readResults(d1, boundaryElection, "boundary-valid" as VoterId, 1)).toMatchObject({
       state: "available",
     });
-    expect(await readResults(d1, boundaryElection, "boundary-valid", null)).toEqual({
+    expect(await readResults(d1, boundaryElection, "boundary-valid" as VoterId, null)).toEqual({
       state: "locked",
       validCount: 1,
       threshold: null,
@@ -213,7 +214,7 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
       },
       winnerId: null,
     });
-    const cycleResult = await readResults(d1, cycleElection, "cycle-a", 2);
+    const cycleResult = await readResults(d1, cycleElection, "cycle-a" as VoterId, 2);
     expect(cycleResult).toMatchObject({
       state: "available",
       winnerId: null,
@@ -265,7 +266,7 @@ it.each(["withdrawal", "eligibility loss"] as const)(
           };
         },
       });
-      expect(await readResults(interceptedD1, election, "snapshot-blank", 2)).toEqual({
+      expect(await readResults(interceptedD1, election, "snapshot-blank" as VoterId, 2)).toEqual({
         state: "locked",
         validCount: change === "withdrawal" ? 1 : 2,
         threshold: 2,

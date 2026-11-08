@@ -52,7 +52,7 @@ describe("GET /auth/callback", () => {
 
     expect(location).toBe("/ballot");
     expect([...jar.keys()]).toEqual([voterCookie.name(true)]);
-    const voter = await readVoter(cookies, SESSION_SECRET, new Date());
+    const voter = await readVoter(cookies, SESSION_SECRET, new Date(), true);
     expect(voter?.id).toBe("b30810fe-0000-4000-8000-000000000000" as VoterId);
   });
 

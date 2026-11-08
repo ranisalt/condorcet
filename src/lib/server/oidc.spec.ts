@@ -417,6 +417,34 @@ describe("completeLogin", () => {
     );
   });
 
+  for (const [label, claim] of [
+    ["nbf", "nbf"],
+    ["iat", "iat"],
+  ] as const) {
+    it(`throws reason claims when ${label} is in the future`, async () => {
+      const { cookies } = fakeCookies();
+      const { state, nonce } = await startLogin(cookies);
+      const future = validClaims(nonce, { [claim]: Math.floor(NOW.getTime() / 1000) + 60 });
+      const { fetchFn } = providerFetch({ idToken: await signJwt(future) });
+
+      await expectLoginError(
+        completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+        "claims",
+      );
+    });
+  }
+
+  it("accepts an nbf that has already passed", async () => {
+    const { cookies } = fakeCookies();
+    const { state, nonce } = await startLogin(cookies);
+    const claims = validClaims(nonce, { nbf: Math.floor(NOW.getTime() / 1000) });
+    const { fetchFn } = providerFetch({ idToken: await signJwt(claims) });
+
+    await expect(completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW)).resolves.toBe(
+      "voter-opaque-1",
+    );
+  });
+
   it("throws reason nonce on a nonce mismatch", async () => {
     const { cookies } = fakeCookies();
     const { state } = await startLogin(cookies);

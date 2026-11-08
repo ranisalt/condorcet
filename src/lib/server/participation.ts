@@ -1,7 +1,7 @@
 import { error, redirect } from "@sveltejs/kit";
 import { env } from "cloudflare:workers";
 import { m } from "#lib/paraglide/messages.js";
-import type { Election } from "../election.ts";
+import { checkElectionId, type Election } from "../election.ts";
 import { readParticipation, type Participation } from "./ballots.ts";
 import { currentElection } from "./election.ts";
 import type { VoterId } from "./voter-session.ts";
@@ -36,8 +36,8 @@ export async function enterStep(
   if (election === null) error(404, m.no_election());
 
   if (electionIds !== undefined) {
-    if (electionIds.length !== 1 || typeof electionIds[0] !== "string") return { error: "invalid" };
-    if (electionIds[0] !== election.id) return { error: "stale" };
+    const problem = checkElectionId(electionIds, election);
+    if (problem !== null) return { error: problem };
   }
 
   const participation = await readParticipation(env.DB, election.id, locals.voter);

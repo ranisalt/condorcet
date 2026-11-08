@@ -1,3 +1,4 @@
+import type { VoterId } from "./voter-session.ts";
 import { expect, it } from "vitest";
 import { currentElection } from "./election.ts";
 import { openTestD1 } from "../../test/d1.ts";
@@ -93,7 +94,12 @@ performanceTest(
       );
 
       const startedAt = performance.now();
-      const results = await readResults(d1, currentElection, "perf-voter-0", validBallots);
+      const results = await readResults(
+        d1,
+        currentElection,
+        "perf-voter-0" as VoterId,
+        validBallots,
+      );
       const durationMs = performance.now() - startedAt;
       const counts = await readElectionCounts(d1, currentElection.id);
       const pairs = await readPairwiseCounts(d1, currentElection);

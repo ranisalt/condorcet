@@ -17,7 +17,3 @@ export function base64UrlDecode(text: string): Uint8Array<ArrayBuffer> {
   if (base64UrlEncode(bytes) !== text) throw new Error("non-canonical base64url");
   return bytes;
 }
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

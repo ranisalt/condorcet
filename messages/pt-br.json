@@ -51,6 +51,7 @@
   "cast_vote": "Enviar meu voto",
   "saving_vote": "Enviando voto…",
   "invalid_ballot": "Não foi possível validar a cédula. Reabra a cédula e confira suas escolhas.",
+  "invalid_election_link": "Este endereço não identifica a simulação corretamente. Volte à cédula e envie de novo.",
   "stale_election": "A simulação mudou desde que esta cédula foi aberta. Reabra a cédula antes de enviar.",
   "save_failed": "Não foi possível salvar seu voto. Suas escolhas continuam nesta página. Tente enviar novamente.",
   "login_failed": "Não foi possível entrar com Google. Tente novamente.",

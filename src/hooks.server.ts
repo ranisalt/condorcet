@@ -25,7 +25,12 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 
 const handleVoter: Handle = async ({ event, resolve }) => {
   if (!building) {
-    const voter = await readVoter(event.cookies, SESSION_SECRET, new Date());
+    const voter = await readVoter(
+      event.cookies,
+      SESSION_SECRET,
+      new Date(),
+      event.url.protocol === "https:",
+    );
     if (voter !== null) event.locals.voter = voter.id;
   }
   return resolve(event);

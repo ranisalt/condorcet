@@ -1,5 +1,6 @@
 import type { Cookies } from "@sveltejs/kit";
-import { base64UrlDecode, base64UrlEncode, isRecord } from "./encoding.ts";
+import { base64UrlDecode, base64UrlEncode } from "./encoding.ts";
+import { isRecord } from "../is-record.ts";
 
 /** Each cookie kind signs under its own purpose, so a value issued for one is never valid as another. */
 export type CookiePurpose = "voter" | "oidc-tx";
@@ -18,8 +19,13 @@ export type SignedCookie = {
     now: Date,
     secure: boolean,
   ): Promise<void>;
-  /** The transport is not known here, so both the prefixed and plain names are tried. */
-  read(cookies: Cookies, secret: string, now: Date): Promise<Record<string, unknown> | null>;
+  /** Reads only the name for this transport: over https a plain cookie could be tossed in by a sibling subdomain. */
+  read(
+    cookies: Cookies,
+    secret: string,
+    now: Date,
+    secure: boolean,
+  ): Promise<Record<string, unknown> | null>;
   clear(cookies: Cookies, secure: boolean): void;
 };
 
@@ -90,14 +96,9 @@ export function signedCookie(spec: {
         maxAge: spec.ttlMs / 1000,
       });
     },
-    async read(cookies, secret, now) {
-      for (const candidate of [name(true), name(false)]) {
-        const value = cookies.get(candidate);
-        if (!value) continue;
-        const payload = await open(value, secret, now);
-        if (payload) return payload;
-      }
-      return null;
+    async read(cookies, secret, now, secure) {
+      const value = cookies.get(name(secure));
+      return value ? open(value, secret, now) : null;
     },
     clear(cookies, secure) {
       cookies.delete(name(secure), options(secure));

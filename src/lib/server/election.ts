@@ -1,17 +1,15 @@
 import electionConfigJson from "./elections.json";
-import type { Candidate, Election, ElectionConfig } from "../election.ts";
+import {
+  electionTitleKey,
+  type Candidate,
+  type Election,
+  type ElectionConfig,
+} from "../election.ts";
+import { isRecord } from "../is-record.ts";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const timestampPattern =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2}))$/;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isUnknownArray(value: unknown): value is unknown[] {
-  return Array.isArray(value);
-}
 
 function isUuid(value: unknown): value is string {
   return typeof value === "string" && uuidPattern.test(value);
@@ -81,18 +79,18 @@ function parseElection(value: unknown, index: number): Election {
   const rawSources = value.sources;
   const rawCandidates = value.candidates;
   if (!isUuid(id)) throw new TypeError(`${path}.id must be a UUID`);
-  if (titleKey !== "election_br_2026_title") throw new TypeError(`${path}.titleKey is unsupported`);
+  if (titleKey !== electionTitleKey) throw new TypeError(`${path}.titleKey is unsupported`);
   if (closesAt !== null && (typeof closesAt !== "string" || !hasValidTimezoneTimestamp(closesAt))) {
     throw new TypeError(`${path}.closesAt must be null or a valid timezone-qualified timestamp`);
   }
   if (
-    !isUnknownArray(rawSources) ||
+    !Array.isArray(rawSources) ||
     rawSources.length === 0 ||
     !rawSources.every(isNonemptyString)
   ) {
     throw new TypeError(`${path}.sources must contain nonempty source strings`);
   }
-  if (!isUnknownArray(rawCandidates) || rawCandidates.length < 2) {
+  if (!Array.isArray(rawCandidates) || rawCandidates.length < 2) {
     throw new TypeError(`${path}.candidates must contain at least two candidates`);
   }
 
@@ -126,7 +124,7 @@ export function validateElectionConfig(value: unknown): ElectionConfig {
   if (currentElectionId !== null && !isUuid(currentElectionId)) {
     throw new TypeError("currentElectionId must be null or a UUID");
   }
-  if (!isUnknownArray(rawElections)) throw new TypeError("elections must be an array");
+  if (!Array.isArray(rawElections)) throw new TypeError("elections must be an array");
 
   const elections = rawElections.map((election, index) => parseElection(election, index));
   const electionIds = new Set<string>();
@@ -147,7 +145,7 @@ export function selectElection(config: ElectionConfig): Election | null {
 }
 
 function freezeTree<T>(value: T): T {
-  if (isUnknownArray(value)) {
+  if (Array.isArray(value)) {
     for (const child of value) freezeTree(child);
     Object.freeze(value);
   } else if (isRecord(value)) {

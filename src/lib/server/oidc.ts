@@ -1,5 +1,6 @@
 import type { Cookies } from "@sveltejs/kit";
-import { base64UrlDecode, base64UrlEncode, isRecord } from "./encoding.ts";
+import { base64UrlDecode, base64UrlEncode } from "./encoding.ts";
+import { isRecord } from "../is-record.ts";
 import { signedCookie } from "./signed-cookie.ts";
 import type { VoterId } from "./voter-session.ts";
 
@@ -81,7 +82,7 @@ export async function completeLogin(
   fetchFn: typeof fetch,
   now: Date,
 ): Promise<VoterId> {
-  const transaction = await transactionCookie.read(cookies, config.secret, now);
+  const transaction = await transactionCookie.read(cookies, config.secret, now, config.secure);
   transactionCookie.clear(cookies, config.secure);
   if (
     !transaction ||
@@ -236,6 +237,9 @@ async function verifyIdToken(
   if (typeof claims.exp !== "number" || claims.exp * 1000 <= now.getTime()) {
     throw new LoginError("claims");
   }
+  const notInFuture = (claim: unknown) =>
+    claim === undefined || (typeof claim === "number" && claim * 1000 <= now.getTime());
+  if (!notInFuture(claims.nbf) || !notInFuture(claims.iat)) throw new LoginError("claims");
   if (typeof claims.sub !== "string" || claims.sub.length === 0) throw new LoginError("claims");
   if (claims.nonce !== expectedNonce) throw new LoginError("nonce");
 

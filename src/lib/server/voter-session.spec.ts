@@ -41,7 +41,7 @@ describe("voter session cookie", () => {
     const { cookies } = fakeCookies();
     await writeVoter(cookies, SECRET, VOTER, NOW, false);
 
-    expect(await readVoter(cookies, SECRET, NOW)).toEqual({ id: VOTER });
+    expect(await readVoter(cookies, SECRET, NOW, false)).toEqual({ id: VOTER });
   });
 
   it("rejects a flipped payload byte", async () => {
@@ -51,7 +51,7 @@ describe("voter session cookie", () => {
 
     const { cookies } = fakeCookies();
     cookies.set(name, tampered, {});
-    expect(await readVoter(cookies, SECRET, NOW)).toBeNull();
+    expect(await readVoter(cookies, SECRET, NOW, false)).toBeNull();
   });
 
   it("rejects a flipped signature byte", async () => {
@@ -62,7 +62,7 @@ describe("voter session cookie", () => {
 
     const { cookies } = fakeCookies();
     cookies.set(name, tampered, {});
-    expect(await readVoter(cookies, SECRET, NOW)).toBeNull();
+    expect(await readVoter(cookies, SECRET, NOW, false)).toBeNull();
   });
 
   it("rejects a value signed for the login transaction even if it carries a sub", async () => {
@@ -70,14 +70,14 @@ describe("voter session cookie", () => {
     const value = await transaction.seal({ sub: VOTER }, SECRET, NOW);
     const { cookies } = fakeCookies();
     cookies.set(voterCookie.name(false), value, {});
-    expect(await readVoter(cookies, SECRET, NOW)).toBeNull();
+    expect(await readVoter(cookies, SECRET, NOW, false)).toBeNull();
   });
 
   it("rejects a cookie signed with a different secret", async () => {
     const { name, value } = await issuedValue();
     const { cookies } = fakeCookies();
     cookies.set(name, value, {});
-    expect(await readVoter(cookies, "another-secret-with-enough-length-1", NOW)).toBeNull();
+    expect(await readVoter(cookies, "another-secret-with-enough-length-1", NOW, false)).toBeNull();
   });
 
   it("keeps the voter signed in for exactly one day", async () => {
@@ -85,8 +85,10 @@ describe("voter session cookie", () => {
     const { cookies } = fakeCookies();
     cookies.set(name, value, {});
     const oneDay = 24 * 60 * 60 * 1000;
-    expect(await readVoter(cookies, SECRET, new Date(NOW.getTime() + oneDay - 1))).not.toBeNull();
-    expect(await readVoter(cookies, SECRET, new Date(NOW.getTime() + oneDay))).toBeNull();
+    expect(
+      await readVoter(cookies, SECRET, new Date(NOW.getTime() + oneDay - 1), false),
+    ).not.toBeNull();
+    expect(await readVoter(cookies, SECRET, new Date(NOW.getTime() + oneDay), false)).toBeNull();
   });
 
   it.each(["", "a", "a.b.c", "!!!.***", "%%%"])(
@@ -95,7 +97,7 @@ describe("voter session cookie", () => {
       const { cookies, jar } = fakeCookies();
       jar.set("voter", value);
       jar.set("__Host-voter", value);
-      expect(await readVoter(cookies, SECRET, NOW)).toBeNull();
+      expect(await readVoter(cookies, SECRET, NOW, false)).toBeNull();
     },
   );
 
@@ -106,5 +108,21 @@ describe("voter session cookie", () => {
 
     clearVoter(cookies, true);
     expect(jar.size).toBe(0);
+  });
+});
+
+describe("voter session cookie name per transport", () => {
+  it("ignores a plain voter cookie over https, so a sibling subdomain cannot toss one in", async () => {
+    const { cookies } = fakeCookies();
+    await writeVoter(cookies, SECRET, VOTER, NOW, false);
+
+    expect(await readVoter(cookies, SECRET, NOW, true)).toBeNull();
+  });
+
+  it("reads the __Host- cookie over https", async () => {
+    const { cookies } = fakeCookies();
+    await writeVoter(cookies, SECRET, VOTER, NOW, true);
+
+    expect(await readVoter(cookies, SECRET, NOW, true)).toEqual({ id: VOTER });
   });
 });
