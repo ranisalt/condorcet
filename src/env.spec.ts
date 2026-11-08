@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseResultsThreshold } from "./results-threshold.ts";
+import { parseResultsThreshold } from "./env.ts";
 
 it("treats an unset or empty threshold as not yet defined", () => {
   expect(parseResultsThreshold(undefined)).toBeNull();

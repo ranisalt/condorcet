@@ -1,14 +1,6 @@
-import { and, eq, sql } from "drizzle-orm";
-import { tally, type PairwiseCount, type Tally } from "../voting-methods.ts";
+import { tally, type Tally } from "../voting-methods.ts";
 import type { Election } from "../election.ts";
-import {
-  buildElectionCountsQuery,
-  buildParticipationQuery,
-  readElectionCounts,
-  readParticipation,
-} from "./ballots.ts";
-import { getDb } from "./db/index.ts";
-import { ballotRank } from "./db/election.schema.ts";
+import { readBallotSnapshot, readElectionCounts, readParticipation } from "./ballots.ts";
 import type { VoterId } from "./voter-session.ts";
 
 export type ResultsView =
@@ -35,10 +27,10 @@ export type ResultsView =
  */
 function lockReason(
   threshold: number | null,
-  participation: { submittedAt: Date | null } | undefined,
+  participation: { submittedAt: Date | null } | null,
   validCount: number,
 ): "not-submitted" | "threshold" | null {
-  if (participation === undefined || participation.submittedAt === null) return "not-submitted";
+  if (participation === null || participation.submittedAt === null) return "not-submitted";
   if (threshold === null || validCount < threshold) return "threshold";
   return null;
 }
@@ -51,77 +43,32 @@ function locked(
   return { state: "locked", validCount, threshold, reason };
 }
 
-export function buildPairwiseCountsQuery(db: ReturnType<typeof getDb>, election: Election) {
-  const candidateIds = JSON.stringify(election.candidates.map((candidate) => candidate.id));
-  return db
-    .select({
-      preferredId: ballotRank.candidateId,
-      otherId: sql<number>`CAST(candidate.value AS INTEGER)`,
-      votes: sql<number>`count(*)`,
-    })
-    .from(ballotRank)
-    .innerJoin(
-      sql`json_each(${candidateIds}) AS candidate`,
-      sql`"ballot_rank"."candidate_id" <> CAST(candidate.value AS INTEGER)`,
-    )
-    .leftJoin(
-      sql`ballot_rank AS opponent`,
-      sql`opponent.election_id = "ballot_rank"."election_id"
-        AND opponent.voter_id = "ballot_rank"."voter_id"
-        AND opponent.candidate_id = CAST(candidate.value AS INTEGER)`,
-    )
-    .where(
-      and(
-        eq(ballotRank.electionId, election.id),
-        sql`(opponent.position IS NULL OR "ballot_rank"."position" < opponent.position)`,
-      ),
-    )
-    .groupBy(ballotRank.candidateId, sql`CAST(candidate.value AS INTEGER)`);
-}
-
-export async function readPairwiseCounts(
-  d1: D1Database,
-  election: Election,
-): Promise<PairwiseCount[]> {
-  return buildPairwiseCountsQuery(getDb(d1), election).all();
-}
-
 export async function readResults(
   d1: D1Database,
   election: Election,
   voterId: VoterId | null,
   threshold: number | null,
 ): Promise<ResultsView> {
-  const db = getDb(d1);
   const [precheckParticipation, precheckCounts] = await Promise.all([
     voterId === null ? Promise.resolve(null) : readParticipation(d1, election.id, voterId),
     readElectionCounts(d1, election.id),
   ]);
 
   if (voterId === null) return locked(threshold, precheckCounts.validCount, "not-submitted");
-  const precheckReason = lockReason(
-    threshold,
-    precheckParticipation ?? undefined,
-    precheckCounts.validCount,
-  );
+  const precheckReason = lockReason(threshold, precheckParticipation, precheckCounts.validCount);
   if (precheckReason !== null) return locked(threshold, precheckCounts.validCount, precheckReason);
 
-  const [participationRows, countRows, pairs] = await db.batch([
-    buildParticipationQuery(db, election.id, voterId),
-    buildElectionCountsQuery(db, election.id),
-    buildPairwiseCountsQuery(db, election),
-  ]);
-  const snapshotCounts = countRows[0] ?? { validCount: 0, blankCount: 0 };
-  const snapshotReason = lockReason(threshold, participationRows[0], snapshotCounts.validCount);
-  if (snapshotReason !== null) return locked(threshold, snapshotCounts.validCount, snapshotReason);
+  const snapshot = await readBallotSnapshot(d1, election, voterId);
+  const snapshotReason = lockReason(threshold, snapshot.participation, snapshot.validCount);
+  if (snapshotReason !== null) return locked(threshold, snapshot.validCount, snapshotReason);
 
   const candidateIds = election.candidates.map((candidate) => candidate.id);
-  const { matrix, condorcetWinnerId, methods } = tally(candidateIds, pairs);
+  const { matrix, condorcetWinnerId, methods } = tally(candidateIds, snapshot.pairs);
 
   return {
     state: "available",
-    validCount: snapshotCounts.validCount,
-    blankCount: snapshotCounts.blankCount,
+    validCount: snapshot.validCount,
+    blankCount: snapshot.blankCount,
     threshold,
     matrix,
     winnerId: condorcetWinnerId,

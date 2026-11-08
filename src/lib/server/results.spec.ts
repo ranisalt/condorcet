@@ -1,15 +1,9 @@
 import type { VoterId } from "./voter-session.ts";
 import { expect, it } from "vitest";
 import type { Election } from "../election.ts";
-import { tally, type PairwiseCount } from "../voting-methods.ts";
 import { acknowledgeElection, readElectionCounts, replaceBallot } from "./ballots.ts";
 import { openTestD1 } from "../../test/d1.ts";
-import { readPairwiseCounts, readResults } from "./results.ts";
-
-function condorcetOf(candidateIds: number[], pairs: PairwiseCount[]) {
-  const { matrix, condorcetWinnerId } = tally(candidateIds, pairs);
-  return { matrix, winnerId: condorcetWinnerId };
-}
+import { readResults } from "./results.ts";
 
 const at = new Date("2026-10-15T12:00:00.000Z");
 const election: Election = {
@@ -60,8 +54,10 @@ it("aggregates omitted-last pairwise preferences inside D1 and isolates election
     await replaceBallot(d1, election.id, "voter-blank", [], at);
     await replaceBallot(d1, "other-election", "voter-a", [130, 0], at);
 
-    const pairs = await readPairwiseCounts(d1, election);
-    expect(condorcetOf([0, 87, 130], pairs)).toEqual({
+    expect(await readResults(d1, election, "voter-a" as VoterId, 1)).toMatchObject({
+      state: "available",
+      validCount: 3,
+      blankCount: 1,
       matrix: {
         0: { 0: 0, 87: 1, 130: 2 },
         87: { 0: 1, 87: 0, 130: 2 },
@@ -69,7 +65,6 @@ it("aggregates omitted-last pairwise preferences inside D1 and isolates election
       },
       winnerId: null,
     });
-    expect(pairs).toHaveLength(6);
   } finally {
     await dispose();
   }
@@ -136,9 +131,6 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     await replaceBallot(d1, election.id, "valid-c", [130], new Date("2026-10-17T12:00:00.000Z"));
     const unlockedAgain = await readResults(d1, election, "blank" as VoterId, 2);
     expect(unlockedAgain.state).toBe("available");
-    expect(tally([0, 87, 130], await readPairwiseCounts(d1, election)).matrix).toEqual(
-      unlockedAgain.state === "available" ? unlockedAgain.matrix : {},
-    );
 
     const boundaryElection = { ...election, id: "boundary-election" };
     await acknowledgeElection(d1, boundaryElection.id, "boundary-valid", at);
@@ -175,24 +167,13 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
   }
 });
 
-it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles", async () => {
+it("handles complete rankings, sparse ballots, and Condorcet cycles", async () => {
   const { d1, dispose } = await openTestD1();
   try {
-    const emptyPairs = await readPairwiseCounts(d1, election);
-    expect(emptyPairs).toEqual([]);
-    expect(condorcetOf([0, 87, 130], emptyPairs)).toEqual({
-      matrix: {
-        0: { 0: 0, 87: 0, 130: 0 },
-        87: { 0: 0, 87: 0, 130: 0 },
-        130: { 0: 0, 87: 0, 130: 0 },
-      },
-      winnerId: null,
-    });
-
     const sparseElection = { ...election, id: "sparse-election" };
     await acknowledgeElection(d1, sparseElection.id, "sparse-voter", at);
     await replaceBallot(d1, sparseElection.id, "sparse-voter", [0], at);
-    expect(condorcetOf([0, 87, 130], await readPairwiseCounts(d1, sparseElection))).toEqual({
+    expect(await readResults(d1, sparseElection, "sparse-voter" as VoterId, 1)).toMatchObject({
       matrix: {
         0: { 0: 0, 87: 1, 130: 1 },
         87: { 0: 0, 87: 0, 130: 0 },
@@ -211,7 +192,7 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
       await acknowledgeElection(d1, cycleElection.id, ballot.voterId, at);
       await replaceBallot(d1, cycleElection.id, ballot.voterId, ballot.ranking, at);
     }
-    expect(condorcetOf([0, 87, 130], await readPairwiseCounts(d1, cycleElection))).toEqual({
+    expect(await readResults(d1, cycleElection, "cycle-a" as VoterId, 2)).toMatchObject({
       matrix: {
         0: { 0: 0, 87: 2, 130: 1 },
         87: { 0: 1, 87: 0, 130: 2 },

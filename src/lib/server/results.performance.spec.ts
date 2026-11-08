@@ -2,9 +2,7 @@ import type { VoterId } from "./voter-session.ts";
 import { expect, it } from "vitest";
 import { currentElection } from "./election.ts";
 import { openTestD1 } from "../../test/d1.ts";
-import { readElectionCounts } from "./ballots.ts";
-import { buildPairwiseCountsQuery, readPairwiseCounts, readResults } from "./results.ts";
-import { getDb } from "./db/index.ts";
+import { readResults } from "./results.ts";
 
 const validBallots = 10_000;
 const blankBallots = 100;
@@ -93,27 +91,46 @@ performanceTest(
         maxParametersPerStatement,
       );
 
+      // Record the statements readResults sends so the pairwise query plan can be inspected.
+      const statements: { sql: string; params: unknown[] }[] = [];
+      const recordingD1 = new Proxy(d1, {
+        get(target, key) {
+          if (key !== "prepare") return Reflect.get(target, key, target);
+          return (sql: string) => {
+            const statement = target.prepare(sql);
+            const record = { sql, params: [] as unknown[] };
+            statements.push(record);
+            return new Proxy(statement, {
+              get(inner, innerKey) {
+                if (innerKey !== "bind") return Reflect.get(inner, innerKey, inner);
+                return (...params: unknown[]) => {
+                  record.params = params;
+                  return inner.bind(...params);
+                };
+              },
+            });
+          };
+        },
+      });
+
       const startedAt = performance.now();
       const results = await readResults(
-        d1,
+        recordingD1,
         currentElection,
         "perf-voter-0" as VoterId,
         validBallots,
       );
       const durationMs = performance.now() - startedAt;
-      const counts = await readElectionCounts(d1, currentElection.id);
-      const pairs = await readPairwiseCounts(d1, currentElection);
-      expect(counts).toEqual({ validCount: validBallots, blankCount: blankBallots });
       expect(results.state).toBe("available");
       if (results.state !== "available")
         throw new Error("Threshold-sized fixture should unlock results");
       expect(results.validCount).toBe(validBallots);
       expect(results.blankCount).toBe(blankBallots);
-      expect(pairs.length).toBeLessThanOrEqual(candidateIds.length * (candidateIds.length - 1));
       expect(JSON.stringify(results)).not.toContain("perf-voter-");
       expect(JSON.stringify(results).length).toBeLessThan(32 * 1024);
 
-      const query = buildPairwiseCountsQuery(getDb(d1), currentElection).toSQL();
+      const query = statements.find((statement) => statement.sql.includes("opponent"));
+      if (query === undefined) throw new Error("readResults did not run the pairwise query");
       const plan = await d1
         .prepare(`EXPLAIN QUERY PLAN ${query.sql}`)
         .bind(...query.params)
