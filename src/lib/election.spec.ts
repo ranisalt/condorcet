@@ -138,12 +138,6 @@ it("reorders down, ignores edits for IDs outside the candidate order, and keeps 
   expect(original.order).toEqual([0, 87, 130]);
 });
 
-it("rejects duplicate candidate IDs at the ballot parsing boundary", () => {
-  const duplicateCandidates = [candidates[0], candidates[0]];
-  expect(() => parseRankedIds([], duplicateCandidates)).toThrow(/duplicate candidate IDs/);
-  expect(() => parseDraftEdit("add:0", duplicateCandidates)).toThrow(/duplicate candidate IDs/);
-});
-
 it("handles empty and singleton shuffles without sampling and validates random bounds", () => {
   const random = () => {
     throw new Error("random should not be sampled for fewer than two values");

@@ -9,6 +9,13 @@ import { parseResultsThreshold } from "./lib/results-threshold.ts";
 function runtimeSecret(name: string) {
   return (value: string | undefined): string => {
     if (building) return value ?? "";
+    return requiredString(name)(value);
+  };
+}
+
+/** A build-time value that must be set. */
+function requiredString(name: string) {
+  return (value: string | undefined): string => {
     if (typeof value !== "string" || value === "") throw new Error(`${name} is required`);
     return value;
   };
@@ -40,21 +47,12 @@ export const variables = defineEnvVars({
   PUBLIC_SUPABASE_URL: {
     public: true,
     static: true,
-    schema: (value) => {
-      if (typeof value !== "string" || value === "")
-        throw new Error("PUBLIC_SUPABASE_URL is required");
-      return value;
-    },
+    schema: requiredString("PUBLIC_SUPABASE_URL"),
   },
   PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
     public: true,
     static: true,
-    schema: (value) => {
-      if (typeof value !== "string" || value === "") {
-        throw new Error("PUBLIC_SUPABASE_PUBLISHABLE_KEY is required");
-      }
-      return value;
-    },
+    schema: requiredString("PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
   },
   SESSION_SECRET: {
     description:
@@ -64,10 +62,7 @@ export const variables = defineEnvVars({
   OIDC_CLIENT_ID: {
     static: true,
     description: "OAuth client ID registered with the Supabase OAuth server for this app.",
-    schema: (value) => {
-      if (typeof value !== "string" || value === "") throw new Error("OIDC_CLIENT_ID is required");
-      return value;
-    },
+    schema: requiredString("OIDC_CLIENT_ID"),
   },
   RESULTS_THRESHOLD: {
     static: true,

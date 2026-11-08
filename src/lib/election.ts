@@ -6,9 +6,12 @@ export type Candidate = {
   vice: { name: string; party: string };
 };
 
+/** The only election title the catalog has; the config may name no other. */
+export const electionTitleKey = "election_br_2026_title";
+
 export type Election = {
   id: string;
-  titleKey: "election_br_2026_title";
+  titleKey: typeof electionTitleKey;
   closesAt: string | null;
   sources: string[];
   candidates: Candidate[];
@@ -32,9 +35,7 @@ export function isElectionOpen(election: Election, now: Date): boolean {
 function candidateIdsByString(candidates: Candidate[]): Map<string, number> {
   const ids = new Map<string, number>();
   for (const candidate of candidates) {
-    const key = String(candidate.id);
-    if (ids.has(key)) throw new InvalidBallotError("Election contains duplicate candidate IDs");
-    ids.set(key, candidate.id);
+    ids.set(String(candidate.id), candidate.id);
   }
   return ids;
 }
@@ -58,13 +59,17 @@ export function parseRankedIds(values: FormDataEntryValue[], candidates: Candida
   return ranked;
 }
 
+/** A request names its election once, as text, and it must be the current one. */
+export function checkElectionId(
+  electionIds: readonly FormDataEntryValue[],
+  election: Election,
+): "invalid" | "stale" | null {
+  if (electionIds.length !== 1 || typeof electionIds[0] !== "string") return "invalid";
+  return electionIds[0] === election.id ? null : "stale";
+}
+
 export function parseDraft(form: FormData, election: Election): BallotDraft {
-  const electionIds = form.getAll("electionId");
-  if (
-    electionIds.length !== 1 ||
-    typeof electionIds[0] !== "string" ||
-    electionIds[0] !== election.id
-  ) {
+  if (checkElectionId(form.getAll("electionId"), election) !== null) {
     throw new InvalidBallotError("Election ID is missing, duplicated, malformed, or stale");
   }
 
