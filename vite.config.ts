@@ -8,6 +8,7 @@ import { playwright } from "@vitest/browser-playwright";
 import adapter from "@sveltejs/adapter-cloudflare";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { sentrySvelteKit } from "@sentry/sveltekit/vite";
+import { localWranglerConfig } from "./tests/helpers/wrangler-config.ts";
 
 export default defineConfig(({ mode }) => {
   let envDir: string | undefined;
@@ -40,27 +41,7 @@ export default defineConfig(({ mode }) => {
     mkdirSync(directory, { recursive: true });
     writeFileSync(
       configPath,
-      JSON.stringify(
-        {
-          name: "condorcet-vitest-local",
-          compatibility_date: "2026-10-15",
-          compatibility_flags: ["nodejs_als"],
-          d1_databases: [
-            {
-              binding: "DB",
-              database_name: "condorcet-vitest-local",
-              database_id: "00000000-0000-0000-0000-000000000000",
-              migrations_dir: resolve("drizzle"),
-            },
-          ],
-          vars: {
-            SESSION_SECRET: "condorcet-local-test-secret-32-characters",
-            OIDC_CLIENT_SECRET: "test-secret",
-          },
-        },
-        null,
-        2,
-      ),
+      JSON.stringify(localWranglerConfig("condorcet-vitest-local"), null, 2),
     );
     platformProxy = {
       configPath,

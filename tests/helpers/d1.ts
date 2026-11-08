@@ -3,9 +3,11 @@ import { access, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promise
 import { join, resolve } from "node:path";
 import { getPlatformProxy } from "wrangler";
 import { readMigrations } from "../../src/test/migrations.ts";
+import { localWranglerConfig } from "./wrangler-config.ts";
+
+export { TEST_SECRET } from "./wrangler-config.ts";
 
 export const TEST_ORIGIN = "http://localhost:4173";
-export const TEST_SECRET = "condorcet-local-test-secret-32-characters";
 
 const ROOT = process.cwd();
 
@@ -29,21 +31,7 @@ export async function createE2EWranglerConfig(
   const directory = resolve(ROOT, `.wrangler/e2e/config-${process.pid}-${randomUUID()}`);
   await mkdir(directory, { recursive: true });
   const config = {
-    name: "condorcet-e2e-local",
-    compatibility_date: "2026-10-15",
-    compatibility_flags: ["nodejs_als"],
-    d1_databases: [
-      {
-        binding: "DB",
-        database_name: "condorcet-e2e-local",
-        database_id: "00000000-0000-0000-0000-000000000000",
-        migrations_dir: resolve(ROOT, "drizzle"),
-      },
-    ],
-    vars: {
-      SESSION_SECRET: TEST_SECRET,
-      OIDC_CLIENT_SECRET: "test-secret",
-    },
+    ...localWranglerConfig("condorcet-e2e-local"),
     ...(options.worker
       ? {
           main: resolve(ROOT, ".svelte-kit/cloudflare/_worker.js"),
