@@ -1,0 +1,17 @@
+{
+  "cycle": [
+    { "count": 1, "order": ["A", "B", "C"] },
+    { "count": 1, "order": ["B", "C", "A"] },
+    { "count": 1, "order": ["C", "A", "B"] }
+  ],
+  "squeeze": [
+    { "count": 35, "order": ["A", "C", "B"] },
+    { "count": 33, "order": ["B", "C", "A"] },
+    { "count": 32, "order": ["C", "A", "B"] }
+  ],
+  "strength": [
+    { "count": 40, "order": ["A", "B", "C"] },
+    { "count": 35, "order": ["B", "C", "A"] },
+    { "count": 25, "order": ["C", "A", "B"] }
+  ]
+}
