@@ -11,14 +11,12 @@ import type { Actions, PageServerLoad } from "./$types";
 
 export const load = (async ({ locals, url }) => {
   const election = currentElection;
+  const session = {
+    signedIn: locals.voter !== undefined,
+    loginError: url.searchParams.get("loginError") === "1",
+  };
   if (election === null) {
-    return {
-      election: null,
-      open: false,
-      validCount: 0,
-      signedIn: locals.voter !== undefined,
-      loginError: url.searchParams.get("loginError") === "1",
-    };
+    return { election: null, open: false, validCount: 0, ...session };
   }
 
   const { validCount } = await readElectionCounts(env.DB, election.id);
@@ -31,8 +29,7 @@ export const load = (async ({ locals, url }) => {
     },
     open: isElectionOpen(election, new Date()),
     validCount,
-    signedIn: locals.voter !== undefined,
-    loginError: url.searchParams.get("loginError") === "1",
+    ...session,
   };
 }) satisfies PageServerLoad;
 

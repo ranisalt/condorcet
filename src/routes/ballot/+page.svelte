@@ -1,6 +1,7 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
   import Ballot from "#lib/components/Ballot.svelte";
+  import { isBallotError } from "#lib/components/ballot-error.ts";
   import FlowSteps from "#lib/components/FlowSteps.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { PageProps } from "./$types";
@@ -14,14 +15,7 @@
         : data.draft,
   );
   const error = $derived(
-    form !== null &&
-      "error" in form &&
-      (form.error === "invalid" ||
-        form.error === "closed" ||
-        form.error === "stale" ||
-        form.error === "save")
-      ? form.error
-      : undefined,
+    form !== null && "error" in form && isBallotError(form.error) ? form.error : undefined,
   );
   const unsaved = $derived(form !== null && "draft" in form);
 </script>

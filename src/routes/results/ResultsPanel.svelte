@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
   import { m } from "#lib/paraglide/messages.js";
-  import type { Election } from "#lib/election.ts";
+  import type { Candidate, Election } from "#lib/election.ts";
   import type { ResultsView } from "#lib/server/results.ts";
   import { methodIds, type MethodId } from "#lib/voting-methods.ts";
 
@@ -28,7 +28,20 @@
   const methodWinners = $derived(
     view.election.candidates.filter((candidate) => outcome.winnerIds.includes(candidate.id)),
   );
+
+  function marginCell(rowId: number, columnId: number) {
+    if (rowId === columnId) return { outcome: "none", text: "—" };
+    const margin = (view.matrix[rowId]?.[columnId] ?? 0) - (view.matrix[columnId]?.[rowId] ?? 0);
+    if (margin > 0) return { outcome: "win", text: `+${number.format(margin)}` };
+    if (margin < 0) return { outcome: "loss", text: `−${number.format(-margin)}` };
+    return { outcome: "tie", text: "0" };
+  }
 </script>
+
+{#snippet ticketDetails(candidate: Candidate)}
+  <small>{candidate.number} · {candidate.party}</small>
+  <small>{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small>
+{/snippet}
 
 <div class="result-statistics">
   <span>{m.valid_participation({ count: number.format(view.validCount) })}</span>
@@ -40,8 +53,7 @@
   {#if winner}
     <h2 id="condorcet-heading">{winner.name}</h2>
     <p>{m.results_strict_winner_description()}</p>
-    <small>{winner.number} · {winner.party}</small>
-    <small>{m.vice_label({ name: winner.vice.name, party: winner.vice.party })}</small>
+    {@render ticketDetails(winner)}
   {:else}
     <h2 id="condorcet-heading">{m.results_no_strict_winner()}</h2>
     <p>{m.no_condorcet_winner()}</p>
@@ -71,21 +83,14 @@
       <ul class="method-winners">
         {#each methodWinners as candidate (candidate.id)}
           <li>
-            <strong>{candidate.name}</strong><small>{candidate.number} · {candidate.party}</small>
-            <small>{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small
-            >
+            <strong>{candidate.name}</strong>
+            {@render ticketDetails(candidate)}
           </li>
         {/each}
       </ul>
     {:else if methodWinners[0]}
       <h3>{methodWinners[0].name}</h3>
-      <small>{methodWinners[0].number} · {methodWinners[0].party}</small>
-      <small
-        >{m.vice_label({
-          name: methodWinners[0].vice.name,
-          party: methodWinners[0].vice.party,
-        })}</small
-      >
+      {@render ticketDetails(methodWinners[0])}
     {/if}
     <p>{methods[method].description()}</p>
   </section>
@@ -94,23 +99,20 @@
   >
 </section>
 
-<section class="pairwise-section">
+<section class="pairwise-section" aria-labelledby="pairwise-heading">
   <h2 id="pairwise-heading">{m.pairwise_caption()}</h2>
   <p>{m.results_margin_description()}</p>
   <!-- Keyboard users need to focus and scroll the wide comparison table. -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <div class="margin-scroll" role="region" aria-label={m.pairwise_caption()} tabindex="0">
-    <table>
-      <caption>{m.pairwise_caption()}</caption>
+  <div class="margin-scroll" data-matrix-scroll tabindex="0">
+    <table aria-labelledby="pairwise-heading">
       <thead>
         <tr>
           <th scope="col">{m.pairwise_row_label()}</th>
           {#each view.election.candidates as candidate (candidate.id)}
             <th scope="col">
-              <span>{candidate.name}</span><small>{candidate.number} · {candidate.party}</small>
-              <small
-                >{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small
-              >
+              <span>{candidate.name}</span>
+              {@render ticketDetails(candidate)}
             </th>
           {/each}
         </tr>
@@ -119,28 +121,12 @@
         {#each view.election.candidates as candidate (candidate.id)}
           <tr>
             <th scope="row">
-              {candidate.name}
-              <small
-                >{m.vice_label({ name: candidate.vice.name, party: candidate.vice.party })}</small
-              >
+              <span>{candidate.name}</span>
+              {@render ticketDetails(candidate)}
             </th>
             {#each view.election.candidates as opponent (opponent.id)}
-              {@const margin =
-                (view.matrix[candidate.id]?.[opponent.id] ?? 0) -
-                (view.matrix[opponent.id]?.[candidate.id] ?? 0)}
-              <td
-                data-outcome={candidate.id === opponent.id
-                  ? "none"
-                  : margin > 0
-                    ? "win"
-                    : margin < 0
-                      ? "loss"
-                      : "tie"}
-              >
-                {#if candidate.id === opponent.id}—{:else if margin > 0}+{number.format(
-                    margin,
-                  )}{:else if margin < 0}−{number.format(Math.abs(margin))}{:else}0{/if}
-              </td>
+              {@const cell = marginCell(candidate.id, opponent.id)}
+              <td data-outcome={cell.outcome}>{cell.text}</td>
             {/each}
           </tr>
         {/each}
@@ -183,7 +169,7 @@
     gap: 0.25rem;
     padding: 0.375rem;
     margin-block: 1.5rem 0;
-    background: #e9ece5;
+    background: var(--green-soft);
     border: 1px solid var(--line);
     border-radius: 0.3rem;
   }
@@ -202,7 +188,7 @@
   }
   .method-navigation a[aria-current="page"] {
     background: var(--surface);
-    box-shadow: 0 1px 3px #142a1814;
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 8%, transparent);
   }
   .method-outcome {
     border: 1px solid var(--line);
@@ -248,11 +234,6 @@
     border-spacing: 0;
     font-size: 0.875rem;
   }
-  caption {
-    text-align: left;
-    padding: 1rem;
-    font-weight: 600;
-  }
   th,
   td {
     padding: 1rem;
@@ -262,7 +243,7 @@
   }
   th {
     font-weight: 600;
-    background: #f2f3ee;
+    background: var(--paper);
   }
   th:first-child {
     position: sticky;
@@ -279,16 +260,16 @@
     font-variant-numeric: tabular-nums;
   }
   td[data-outcome="win"] {
-    background: #edf3ed;
-    color: #215437;
+    background: var(--green-soft);
+    color: var(--green);
     font-weight: 600;
   }
   td[data-outcome="loss"] {
-    color: #784b43;
+    color: var(--loss);
   }
   td[data-outcome="none"] {
-    background: #f2f3ee;
-    color: #66736a;
+    background: var(--paper);
+    color: var(--muted);
   }
   .matrix-legend {
     color: var(--muted);

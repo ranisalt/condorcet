@@ -67,10 +67,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  const matrixRegion = page.getByRole("region", {
-    name: "Comparações entre candidaturas",
-    exact: true,
-  });
+  const matrixRegion = page.locator("[data-matrix-scroll]");
   await expect(matrixRegion).toHaveAttribute("tabindex", "0");
   expect(await matrixRegion.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(
     true,

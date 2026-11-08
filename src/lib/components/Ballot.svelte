@@ -6,7 +6,8 @@
   import { editDraft, type BallotDraft, type Candidate, type Election } from "../election.ts";
   import CandidateTicket from "./CandidateTicket.svelte";
 
-  type BallotError = "invalid" | "closed" | "stale" | "save";
+  import { ballotErrorMessages, type BallotError } from "./ballot-error.ts";
+
   type EditType = "add" | "remove" | "up" | "down";
 
   let {
@@ -44,7 +45,7 @@
     }),
   );
 
-  function controlKey(id: number, action: string): string {
+  function controlKey(id: number, action: EditType): string {
     return `${id}:${action}`;
   }
 
@@ -64,26 +65,15 @@
     await tick();
 
     const rankedIndex = draft.ranked.indexOf(candidateId);
-    const focusAction =
-      type === "add"
-        ? "remove"
-        : type === "remove"
-          ? "add"
-          : type === "up"
-            ? rankedIndex === 0
-              ? "down"
-              : "up"
-            : rankedIndex === draft.ranked.length - 1
-              ? "up"
-              : "down";
-    controlRefs[controlKey(candidateId, focusAction)]?.focus();
-  }
-
-  function messageForError(value: BallotError): string {
-    if (value === "invalid") return m.invalid_ballot();
-    if (value === "closed") return m.election_closed();
-    if (value === "stale") return m.stale_election();
-    return m.save_failed();
+    const atStart = rankedIndex === 0;
+    const atEnd = rankedIndex === draft.ranked.length - 1;
+    const focusAfter: Record<EditType, EditType> = {
+      add: "remove",
+      remove: "add",
+      up: atStart ? "down" : "up",
+      down: atEnd ? "up" : "down",
+    };
+    controlRefs[controlKey(candidateId, focusAfter[type])]?.focus();
   }
 </script>
 
@@ -112,15 +102,15 @@
   </div>
 
   {#if !open}
-    <section class="readonly-notice" role="status" aria-labelledby="readonly-heading">
+    <section class="readonly-notice" aria-labelledby="readonly-heading">
       <h2 id="readonly-heading">{m.ballot_readonly_heading()}</h2>
       <p>{m.ballot_readonly_body()}</p>
-      <p>{m.election_closed()}</p>
+      <p role="status">{m.election_closed()}</p>
     </section>
   {/if}
 
   {#if error}
-    <p class="form-error" role="alert">{messageForError(error)}</p>
+    <p class="form-error" role="alert">{ballotErrorMessages[error]()}</p>
   {/if}
 
   <form
@@ -234,12 +224,7 @@
 
     <div class="ballot-submit">
       <p>{m.save_rule()}</p>
-      <button
-        class="button button--primary"
-        type="submit"
-        disabled={!open || saving}
-        aria-busy={saving}
-      >
+      <button class="button button--primary" type="submit" disabled={!open || saving}>
         {saving ? m.saving_vote() : m.cast_vote()}
       </button>
     </div>

@@ -115,7 +115,10 @@ it("recognizes candidate ID zero as a strict winner and displays pairwise ties",
     .toBeVisible();
   await expect
     .element(
-      table.getByRole("rowheader", { name: "Candidatura 0 Vice: Vice 0 (TESTE)", exact: true }),
+      table.getByRole("rowheader", {
+        name: "Candidatura 0 0 · TESTE Vice: Vice 0 (TESTE)",
+        exact: true,
+      }),
     )
     .toBeVisible();
   await expect

@@ -18,7 +18,7 @@ test("fills the submit bar with text without shrinking its button", async ({ pag
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openAcknowledgedBallot(page, context);
   const button = page.getByRole("button", { name: "Enviar meu voto", exact: true });
-  const text = button.locator("..").getByRole("paragraph");
+  const text = page.getByRole("paragraph").filter({ hasText: /Somente o envio confirma/ });
   await expect(button).toHaveCSS("flex-shrink", "0");
   const textBox = await text.boundingBox();
   const buttonBox = await button.boundingBox();
