@@ -1073,6 +1073,8 @@ progress::-moz-progress-bar {
   border-bottom: 1px solid var(--line);
   text-align: start;
   vertical-align: top;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .lock-steps {
