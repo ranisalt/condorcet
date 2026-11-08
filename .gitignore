@@ -36,3 +36,4 @@ playwright-report/
 blob-report/
 .dev.vars
 .dev.vars.*
+.vitest
