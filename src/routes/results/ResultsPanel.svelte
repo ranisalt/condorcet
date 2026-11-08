@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import { formatNumber } from "#lib/format.ts";
   import { m } from "#lib/paraglide/messages.js";
   import type { Candidate, Election } from "#lib/election.ts";
   import type { ResultsView } from "#lib/server/results.ts";
@@ -15,7 +16,6 @@
     method: MethodId;
   } = $props();
 
-  const number = new Intl.NumberFormat("pt-BR");
   const methods = {
     copeland: { label: m.results_copeland, description: m.results_copeland_description },
     schulze: { label: m.results_schulze, description: m.results_schulze_description },
@@ -31,9 +31,9 @@
 
   function marginCell(rowId: number, columnId: number) {
     if (rowId === columnId) return { outcome: "none", text: "—" };
-    const margin = (view.matrix[rowId]?.[columnId] ?? 0) - (view.matrix[columnId]?.[rowId] ?? 0);
-    if (margin > 0) return { outcome: "win", text: `+${number.format(margin)}` };
-    if (margin < 0) return { outcome: "loss", text: `−${number.format(-margin)}` };
+    const margin = view.matrix[rowId][columnId] - view.matrix[columnId][rowId];
+    if (margin > 0) return { outcome: "win", text: `+${formatNumber(margin)}` };
+    if (margin < 0) return { outcome: "loss", text: `−${formatNumber(-margin)}` };
     return { outcome: "tie", text: "0" };
   }
 </script>
@@ -44,8 +44,8 @@
 {/snippet}
 
 <div class="result-statistics">
-  <span>{m.valid_participation({ count: number.format(view.validCount) })}</span>
-  <span>{m.blank_stat({ count: number.format(view.blankCount) })}</span>
+  <span>{m.valid_participation({ count: formatNumber(view.validCount) })}</span>
+  <span>{m.blank_stat({ count: formatNumber(view.blankCount) })}</span>
 </div>
 
 <section class="condorcet-panel" aria-labelledby="condorcet-heading">

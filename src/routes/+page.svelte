@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import { formatNumber } from "#lib/format.ts";
   import { m } from "#lib/paraglide/messages.js";
   import type { PageProps } from "./$types";
 
@@ -100,13 +101,13 @@
           </span>
         </div>
         <p class="progress-number">
-          <strong>{data.validCount.toLocaleString("pt-BR")}</strong>
+          <strong>{formatNumber(data.validCount)}</strong>
           <span>
             {threshold === null
-              ? m.progress_count_pending({ count: data.validCount.toLocaleString("pt-BR") })
+              ? m.progress_count_pending({ count: formatNumber(data.validCount) })
               : m.progress_count({
-                  count: data.validCount.toLocaleString("pt-BR"),
-                  threshold: threshold.toLocaleString("pt-BR"),
+                  count: formatNumber(data.validCount),
+                  threshold: formatNumber(threshold),
                 })}
           </span>
         </p>
@@ -116,14 +117,14 @@
           <progress
             value={Math.min(data.validCount, threshold)}
             max={threshold}
-            aria-label={m.progress_label({ threshold: threshold.toLocaleString("pt-BR") })}
+            aria-label={m.progress_label({ threshold: formatNumber(threshold) })}
           ></progress>
           {#if data.validCount >= threshold}
             <p class="progress-note">{m.progress_met_notice()}</p>
           {:else}
             <p class="progress-note">
               {m.progress_remaining({
-                count: (threshold - data.validCount).toLocaleString("pt-BR"),
+                count: formatNumber(threshold - data.validCount),
               })}
             </p>
           {/if}
@@ -134,7 +135,7 @@
         <p>
           {threshold === null
             ? m.results_threshold_pending()
-            : m.results_threshold({ threshold: threshold.toLocaleString("pt-BR") })}
+            : m.results_threshold({ threshold: formatNumber(threshold) })}
         </p>
       </aside>
     </section>

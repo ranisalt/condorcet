@@ -3,12 +3,18 @@
   import { tick, untrack } from "svelte";
   import { enhance } from "$app/forms";
   import { m } from "#lib/paraglide/messages.js";
-  import { editDraft, type BallotDraft, type Candidate, type Election } from "../election.ts";
+  import {
+    editDraft,
+    type BallotDraft,
+    type Candidate,
+    type DraftEdit,
+    type Election,
+  } from "../election.ts";
   import CandidateTicket from "./CandidateTicket.svelte";
 
   import { ballotErrorMessages, type BallotError } from "./ballot-error.ts";
 
-  type EditType = "add" | "remove" | "up" | "down";
+  type EditType = DraftEdit["type"];
 
   let {
     election,

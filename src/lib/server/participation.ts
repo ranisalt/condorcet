@@ -1,7 +1,8 @@
 import { redirect } from "@sveltejs/kit";
+import { m } from "#lib/paraglide/messages.js";
 import { env } from "cloudflare:workers";
 import { checkElectionId, type Election } from "../election.ts";
-import { readParticipation, type Participation } from "./ballots.ts";
+import { readParticipation } from "./ballots.ts";
 import { requireCurrentElection } from "./election.ts";
 import type { VoterId } from "./voter-session.ts";
 
@@ -11,8 +12,16 @@ export type JourneyStep = "acknowledgment" | "ballot" | "thanks";
 export type JourneyEntry = {
   election: Election;
   voterId: VoterId;
-  participation: Participation | null;
 };
+
+export type EntryError = "invalid" | "stale";
+
+/** The HTTP status and pt-BR message for an election id that `enterStep` rejected. */
+export function entryErrorResponse(problem: EntryError): { status: 400 | 409; message: string } {
+  return problem === "stale"
+    ? { status: 409, message: m.stale_election() }
+    : { status: 400, message: m.invalid_election_link() };
+}
 
 /**
  * Admits the signed-in voter to a journey step, or throws the redirect/404 that puts them on the
@@ -24,12 +33,12 @@ export async function enterStep(
   locals: App.Locals,
   step: JourneyStep,
   electionIds: readonly FormDataEntryValue[],
-): Promise<JourneyEntry | { error: "invalid" | "stale" }>;
+): Promise<JourneyEntry | { error: EntryError }>;
 export async function enterStep(
   locals: App.Locals,
   step: JourneyStep,
   electionIds?: readonly FormDataEntryValue[],
-): Promise<JourneyEntry | { error: "invalid" | "stale" }> {
+): Promise<JourneyEntry | { error: EntryError }> {
   if (locals.voter === undefined) redirect(303, "/");
   const election = requireCurrentElection();
 
@@ -46,5 +55,5 @@ export async function enterStep(
     if (step === "thanks" && participation.submittedAt === null) redirect(303, "/ballot");
   }
 
-  return { election, voterId: locals.voter, participation };
+  return { election, voterId: locals.voter };
 }

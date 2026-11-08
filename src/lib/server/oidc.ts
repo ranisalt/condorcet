@@ -35,8 +35,8 @@ const transactionCookie = signedCookie({ purpose: "oidc-tx", name: "oidc_tx", tt
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-function normalizedIssuer(issuer: string): string {
-  return issuer.replace(/\/+$/, "");
+function withoutTrailingSlashes(url: string): string {
+  return url.replace(/\/+$/, "");
 }
 
 function randomToken(): string {
@@ -44,7 +44,7 @@ function randomToken(): string {
 }
 
 export function supabaseIssuer(projectUrl: string): string {
-  return `${projectUrl.replace(/\/$/, "")}/auth/v1`;
+  return `${withoutTrailingSlashes(projectUrl)}/auth/v1`;
 }
 
 export async function beginLogin(config: OidcConfig, cookies: Cookies, now: Date): Promise<URL> {
@@ -63,7 +63,7 @@ export async function beginLogin(config: OidcConfig, cookies: Cookies, now: Date
     config.secure,
   );
 
-  const url = new URL(`${normalizedIssuer(config.issuer)}${AUTHORIZE_PATH}`);
+  const url = new URL(`${withoutTrailingSlashes(config.issuer)}${AUTHORIZE_PATH}`);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("redirect_uri", config.redirectUri);
@@ -119,7 +119,7 @@ async function exchangeCode(
 
   let response: Response;
   try {
-    response = await fetchFn(`${normalizedIssuer(config.issuer)}${TOKEN_PATH}`, {
+    response = await fetchFn(`${withoutTrailingSlashes(config.issuer)}${TOKEN_PATH}`, {
       method: "POST",
       headers: {
         authorization: `Basic ${btoa(credentials)}`,
@@ -159,7 +159,7 @@ async function fetchSigningKey(
 ): Promise<{ kty: "EC"; crv: "P-256"; x: string; y: string; ext: true }> {
   let response: Response;
   try {
-    response = await fetchFn(`${normalizedIssuer(config.issuer)}${JWKS_PATH}`, {
+    response = await fetchFn(`${withoutTrailingSlashes(config.issuer)}${JWKS_PATH}`, {
       headers: { accept: "application/json" },
     });
   } catch {
@@ -228,7 +228,7 @@ async function verifyIdToken(
 
   const claims = decodeJsonSegment(payloadSegment);
   if (!claims) throw new LoginError("claims");
-  if (claims.iss !== normalizedIssuer(config.issuer)) throw new LoginError("claims");
+  if (claims.iss !== withoutTrailingSlashes(config.issuer)) throw new LoginError("claims");
   const audience = claims.aud;
   const audienceMatches = Array.isArray(audience)
     ? audience.includes(config.clientId)

@@ -1,17 +1,16 @@
 import { error } from "@sveltejs/kit";
 import { env } from "cloudflare:workers";
-import { m } from "#lib/paraglide/messages.js";
 import { readOwnRanking } from "#lib/server/ballots.ts";
-import { enterStep } from "#lib/server/participation.ts";
+import { enterStep, entryErrorResponse } from "#lib/server/participation.ts";
 import type { PageServerLoad } from "./$types";
 
 export const load = (async ({ locals, url }) => {
   const entry = await enterStep(locals, "thanks", url.searchParams.getAll("electionId"));
   if ("error" in entry) {
-    if (entry.error === "stale") error(409, m.stale_election());
-    error(400, m.invalid_election_link());
+    const { status, message } = entryErrorResponse(entry.error);
+    error(status, message);
   }
 
   const ranking = await readOwnRanking(env.DB, entry.election.id, entry.voterId);
-  return { blank: ranking.length === 0 };
+  return { titleKey: entry.election.titleKey, blank: ranking.length === 0 };
 }) satisfies PageServerLoad;

@@ -1,7 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { env } from "cloudflare:workers";
 import { acknowledgeElection } from "#lib/server/ballots.ts";
-import { enterStep } from "#lib/server/participation.ts";
+import { enterStep, entryErrorResponse } from "#lib/server/participation.ts";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load = (async ({ locals }) => {
@@ -14,7 +14,8 @@ export const actions = {
     const form = await request.formData();
     const entry = await enterStep(locals, "acknowledgment", form.getAll("electionId"));
     if ("error" in entry) {
-      return entry.error === "stale" ? fail(409, { stale: true }) : fail(400, { invalid: true });
+      const { status, message } = entryErrorResponse(entry.error);
+      return fail(status, { message });
     }
 
     const acknowledgments = form.getAll("acknowledged");

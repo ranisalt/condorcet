@@ -17,9 +17,9 @@ export const load = (async ({ locals, url }) => {
 
   const requestedMethod = url.searchParams.get("method");
   return {
-    method: methodIds.find((id) => id === requestedMethod) ?? "copeland",
     view: {
       ...view,
+      method: methodIds.find((id) => id === requestedMethod) ?? "copeland",
       election: {
         titleKey: election.titleKey,
         candidates: election.candidates,

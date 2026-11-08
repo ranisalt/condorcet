@@ -100,12 +100,8 @@ export async function replaceBallot(
 function electionCountsQuery(db: ReturnType<typeof getDb>, electionId: string) {
   return db
     .select({
+      submittedCount: sql<number>`count(*)`,
       validCount: sql<number>`count(*) FILTER (WHERE EXISTS (
-        SELECT 1 FROM ballot_rank r
-        WHERE r.election_id = "election_participant"."election_id"
-          AND r.voter_id = "election_participant"."voter_id"
-      ))`,
-      blankCount: sql<number>`count(*) FILTER (WHERE NOT EXISTS (
         SELECT 1 FROM ballot_rank r
         WHERE r.election_id = "election_participant"."election_id"
           AND r.voter_id = "election_participant"."voter_id"
@@ -120,12 +116,17 @@ function electionCountsQuery(db: ReturnType<typeof getDb>, electionId: string) {
     );
 }
 
+/** Submitted ballots with no ranked candidate are blank. */
+function toElectionCounts(row: { submittedCount: number; validCount: number } | undefined) {
+  if (row === undefined) return { validCount: 0, blankCount: 0 };
+  return { validCount: row.validCount, blankCount: row.submittedCount - row.validCount };
+}
+
 export async function readElectionCounts(
   d1: D1Database,
   electionId: string,
 ): Promise<ElectionCounts> {
-  const counts = await electionCountsQuery(getDb(d1), electionId).get();
-  return counts ?? { validCount: 0, blankCount: 0 };
+  return toElectionCounts(await electionCountsQuery(getDb(d1), electionId).get());
 }
 
 function pairwiseCountsQuery(db: ReturnType<typeof getDb>, election: Election) {
@@ -171,6 +172,5 @@ export async function readBallotSnapshot(
     electionCountsQuery(db, election.id),
     pairwiseCountsQuery(db, election),
   ]);
-  const counts = countRows[0] ?? { validCount: 0, blankCount: 0 };
-  return { participation: participationRows[0] ?? null, ...counts, pairs };
+  return { participation: participationRows[0] ?? null, ...toElectionCounts(countRows[0]), pairs };
 }

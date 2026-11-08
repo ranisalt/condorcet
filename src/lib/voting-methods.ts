@@ -87,18 +87,16 @@ function copeland(candidateIds: readonly number[], matrix: PairwiseMatrix): Meth
   const scores = candidateIds.map(() => 0);
   for (let first = 0; first < candidateIds.length; first += 1) {
     const firstId = candidateIds[first];
-    if (firstId === undefined) continue;
     for (let second = first + 1; second < candidateIds.length; second += 1) {
       const secondId = candidateIds[second];
-      if (secondId === undefined) continue;
       const firstVotes = matrix[firstId]?.[secondId] ?? 0;
       const secondVotes = matrix[secondId]?.[firstId] ?? 0;
       if (firstVotes > secondVotes) {
-        scores[first] = (scores[first] ?? 0) + 1;
-        scores[second] = (scores[second] ?? 0) - 1;
+        scores[first] += 1;
+        scores[second] -= 1;
       } else if (secondVotes > firstVotes) {
-        scores[second] = (scores[second] ?? 0) + 1;
-        scores[first] = (scores[first] ?? 0) - 1;
+        scores[second] += 1;
+        scores[first] -= 1;
       }
     }
   }

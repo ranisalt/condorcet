@@ -1,9 +1,13 @@
 import { isHttpError } from "@sveltejs/kit";
 import { expect, it, vi } from "vitest";
+import type * as Participation from "#lib/server/participation.ts";
 import { m } from "#lib/paraglide/messages.js";
 
 const entry = vi.hoisted(() => ({ value: null as unknown }));
-vi.mock("#lib/server/participation.ts", () => ({ enterStep: async () => entry.value }));
+vi.mock("#lib/server/participation.ts", async (importOriginal) => ({
+  ...(await importOriginal<typeof Participation>()),
+  enterStep: async () => entry.value,
+}));
 
 import { load } from "./+page.server.ts";
 

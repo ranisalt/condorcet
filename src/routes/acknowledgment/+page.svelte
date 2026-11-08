@@ -44,10 +44,10 @@
       <input type="checkbox" name="acknowledged" value="yes" required />
       <span>{m.ack_label()}</span>
     </label>
-    {#if form?.required || form?.invalid}
+    {#if form?.required}
       <p class="form-error" role="alert">{m.ack_required()}</p>
-    {:else if form?.stale}
-      <p class="form-error" role="alert">{m.stale_election()}</p>
+    {:else if form?.message}
+      <p class="form-error" role="alert">{form.message}</p>
     {/if}
     <button class="button button--primary" type="submit">{m.ack_continue()}</button>
   </form>

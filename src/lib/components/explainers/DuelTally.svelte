@@ -11,11 +11,13 @@
     caption,
   }: { ballots: readonly BallotGroup[]; x: Letter; y: Letter; caption: string } = $props();
   const sides = $derived(
-    [
-      [x, y],
-      [y, x],
-    ].map(([above, below]) => {
-      const groups = supporters(ballots, above as Letter, below as Letter);
+    (
+      [
+        [x, y],
+        [y, x],
+      ] as const
+    ).map(([above, below]) => {
+      const groups = supporters(ballots, above, below);
       return { above, below, groups, sum: total(groups) };
     }),
   );

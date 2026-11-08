@@ -3,6 +3,7 @@ import { consoleLoggingIntegration } from "@sentry/cloudflare";
 import * as Sentry from "@sentry/sveltekit";
 import { building } from "$app/env";
 import { SESSION_SECRET } from "$app/env/private";
+import { isSecure } from "#lib/server/oidc-config.ts";
 import { privateResponse } from "#lib/server/private-response.ts";
 import { readVoter } from "#lib/server/voter-session.ts";
 import { type Handle, sequence } from "@sveltejs/kit/hooks";
@@ -25,12 +26,7 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 
 const handleVoter: Handle = async ({ event, resolve }) => {
   if (!building) {
-    const voter = await readVoter(
-      event.cookies,
-      SESSION_SECRET,
-      new Date(),
-      event.url.protocol === "https:",
-    );
+    const voter = await readVoter(event.cookies, SESSION_SECRET, new Date(), isSecure(event.url));
     if (voter !== null) event.locals.voter = voter.id;
   }
   return resolve(event);

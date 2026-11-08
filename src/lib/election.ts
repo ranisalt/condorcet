@@ -19,7 +19,13 @@ export type Election = {
 
 export type ElectionConfig = { currentElectionId: string | null; elections: Election[] };
 export type BallotDraft = { ranked: number[]; order: number[] };
-export type DraftEdit = { type: "add" | "remove" | "up" | "down"; candidateId: number };
+const editTypes = ["add", "remove", "up", "down"] as const;
+export type DraftEdit = { type: (typeof editTypes)[number]; candidateId: number };
+const draftEditPattern = new RegExp(`^(${editTypes.join("|")}):(\\d+)$`);
+
+function isEditType(value: string | undefined): value is DraftEdit["type"] {
+  return editTypes.some((type) => type === value);
+}
 
 export class InvalidBallotError extends Error {
   constructor(message: string) {
@@ -86,13 +92,10 @@ export function parseDraftEdit(
   if (typeof value !== "string")
     throw new InvalidBallotError("Edit operation must be a text value");
 
-  const match = /^(add|remove|up|down):(\d+)$/.exec(value);
+  const match = draftEditPattern.exec(value);
   const type = match?.[1];
   const candidateIdText = match?.[2];
-  if (
-    (type !== "add" && type !== "remove" && type !== "up" && type !== "down") ||
-    candidateIdText === undefined
-  ) {
+  if (!isEditType(type) || candidateIdText === undefined) {
     throw new InvalidBallotError("Edit operation is malformed");
   }
 

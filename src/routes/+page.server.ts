@@ -3,7 +3,7 @@ import { RESULTS_THRESHOLD } from "$app/env/private";
 import { env } from "cloudflare:workers";
 import { currentElection } from "#lib/server/election.ts";
 import { readElectionCounts } from "#lib/server/ballots.ts";
-import { oidcConfigFor } from "#lib/server/oidc-config.ts";
+import { isSecure, oidcConfigFor } from "#lib/server/oidc-config.ts";
 import { beginLogin } from "#lib/server/oidc.ts";
 import { clearVoter } from "#lib/server/voter-session.ts";
 import { isElectionOpen } from "#lib/election.ts";
@@ -38,13 +38,14 @@ export const actions = {
     let authorizeUrl: URL;
     try {
       authorizeUrl = await beginLogin(oidcConfigFor(url), cookies, new Date());
-    } catch {
+    } catch (cause) {
+      console.error(cause);
       return fail(502, { loginFailed: true });
     }
     redirect(303, authorizeUrl.href, { external: [authorizeUrl.origin] });
   },
   logout: async ({ url, cookies }) => {
-    clearVoter(cookies, url.protocol === "https:");
+    clearVoter(cookies, isSecure(url));
     redirect(303, "/");
   },
 } satisfies Actions;

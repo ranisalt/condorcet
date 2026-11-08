@@ -35,8 +35,10 @@ it("keeps the detailed privacy disclosures closed until the visitor opens them",
   await expect.element(page.getByText(m.login_explanation())).toBeVisible();
 });
 
-it("shows the stale-election message when the action rejects an outdated election", async () => {
-  await render(AcknowledgmentPage, { props: { data, form: { stale: true }, params: {} } });
+it("shows the action's election-link message when the action rejects the election", async () => {
+  await render(AcknowledgmentPage, {
+    props: { data, form: { message: m.stale_election() }, params: {} },
+  });
 
   await expect.element(page.getByRole("alert")).toHaveTextContent(m.stale_election());
 });

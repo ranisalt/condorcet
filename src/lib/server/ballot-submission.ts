@@ -10,7 +10,7 @@ import {
 } from "../election.ts";
 import { env } from "cloudflare:workers";
 import { replaceBallot } from "./ballots.ts";
-import { enterStep } from "./participation.ts";
+import { enterStep, entryErrorResponse } from "./participation.ts";
 
 /** What a ballot form POST asks for: apply one edit to the draft, or save the draft. */
 export type BallotSubmissionKind = "edit" | "save";
@@ -40,7 +40,8 @@ export async function submitBallotForm(
   now: Date,
 ): Promise<BallotSubmission> {
   const entry = await enterStep(locals, "ballot", form.getAll("electionId"));
-  if ("error" in entry) return { error: entry.error, status: entry.error === "stale" ? 409 : 400 };
+  if ("error" in entry)
+    return { error: entry.error, status: entryErrorResponse(entry.error).status };
   const { election, voterId } = entry;
   if (!isElectionOpen(election, now)) return { error: "closed", status: 403 };
 
@@ -55,7 +56,8 @@ export async function submitBallotForm(
   if (kind === "save") {
     try {
       await replaceBallot(env.DB, election.id, voterId, draft.ranked, now);
-    } catch {
+    } catch (cause) {
+      console.error(cause);
       return { error: "save", status: 503, draft };
     }
   }

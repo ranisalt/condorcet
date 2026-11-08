@@ -1,11 +1,11 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import { formatNumber } from "#lib/format.ts";
   import { m } from "#lib/paraglide/messages.js";
   import ResultsPanel from "./ResultsPanel.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
-  const number = new Intl.NumberFormat("pt-BR");
 </script>
 
 <svelte:head>
@@ -28,19 +28,19 @@
           ? m.results_threshold_pending()
           : m.results_below_threshold()}
     </p>
-    <p>{m.valid_participation({ count: number.format(data.view.validCount) })}</p>
+    <p>{m.valid_participation({ count: formatNumber(data.view.validCount) })}</p>
     {#if data.view.threshold !== null}
       <progress
         max={data.view.threshold}
         value={Math.min(data.view.validCount, data.view.threshold)}
-        aria-label={m.progress_label({ threshold: number.format(data.view.threshold) })}
+        aria-label={m.progress_label({ threshold: formatNumber(data.view.threshold) })}
       ></progress>
-      <p>{m.results_threshold({ threshold: number.format(data.view.threshold) })}</p>
+      <p>{m.results_threshold({ threshold: formatNumber(data.view.threshold) })}</p>
     {/if}
     <a class="button button--primary" href={resolve("ballot")}>{m.nav_ballot()}</a>
   </section>
 {:else}
-  <ResultsPanel view={data.view} method={data.method ?? "copeland"} />
+  <ResultsPanel view={data.view} method={data.view.method} />
 {/if}
 
 <style>

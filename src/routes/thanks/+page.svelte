@@ -12,7 +12,7 @@
 
 <div class="thanks-page">
   <section class="thanks-card" aria-labelledby="thanks-heading">
-    <p class="eyebrow">{m.election_br_2026_title()}</p>
+    <p class="eyebrow">{m[data.titleKey]()}</p>
     <h1 id="thanks-heading">{m.thanks_title()}</h1>
     <p class="thanks-message" role="status">{data.blank ? m.thanks_blank() : m.thanks_saved()}</p>
     <nav class="thanks-actions" aria-label={m.main_navigation()}>
