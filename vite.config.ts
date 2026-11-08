@@ -89,6 +89,8 @@ export default defineConfig(({ mode }) => {
         project: "./project.inlang",
         outdir: "./src/lib/paraglide",
         emitTsDeclarations: true,
+        // The default (one module per message) delays dev hydration enough to flake e2e.
+        outputStructure: "locale-modules",
       }),
       // Always on: it also swaps the SDK's tracing for the $app/state variant, without which the
       // client imports $app/stores and throws on SvelteKit 3. Source map upload (needs
