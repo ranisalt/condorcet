@@ -1,10 +1,15 @@
 import type { VoterId } from "./voter-session.ts";
 import { expect, it } from "vitest";
 import type { Election } from "../election.ts";
-import { summarizeCondorcet } from "../condorcet.ts";
+import { tally, type PairwiseCount } from "../voting-methods.ts";
 import { acknowledgeElection, readElectionCounts, replaceBallot } from "./ballots.ts";
 import { openTestD1 } from "../../test/d1.ts";
 import { readPairwiseCounts, readResults } from "./results.ts";
+
+function condorcetOf(candidateIds: number[], pairs: PairwiseCount[]) {
+  const { matrix, condorcetWinnerId } = tally(candidateIds, pairs);
+  return { matrix, winnerId: condorcetWinnerId };
+}
 
 const at = new Date("2026-10-15T12:00:00.000Z");
 const election: Election = {
@@ -56,7 +61,7 @@ it("aggregates omitted-last pairwise preferences inside D1 and isolates election
     await replaceBallot(d1, "other-election", "voter-a", [130, 0], at);
 
     const pairs = await readPairwiseCounts(d1, election);
-    expect(summarizeCondorcet([0, 87, 130], pairs)).toEqual({
+    expect(condorcetOf([0, 87, 130], pairs)).toEqual({
       matrix: {
         0: { 0: 0, 87: 1, 130: 2 },
         87: { 0: 1, 87: 0, 130: 2 },
@@ -131,7 +136,7 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     await replaceBallot(d1, election.id, "valid-c", [130], new Date("2026-10-17T12:00:00.000Z"));
     const unlockedAgain = await readResults(d1, election, "blank" as VoterId, 2);
     expect(unlockedAgain.state).toBe("available");
-    expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, election)).matrix).toEqual(
+    expect(tally([0, 87, 130], await readPairwiseCounts(d1, election)).matrix).toEqual(
       unlockedAgain.state === "available" ? unlockedAgain.matrix : {},
     );
 
@@ -175,7 +180,7 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
   try {
     const emptyPairs = await readPairwiseCounts(d1, election);
     expect(emptyPairs).toEqual([]);
-    expect(summarizeCondorcet([0, 87, 130], emptyPairs)).toEqual({
+    expect(condorcetOf([0, 87, 130], emptyPairs)).toEqual({
       matrix: {
         0: { 0: 0, 87: 0, 130: 0 },
         87: { 0: 0, 87: 0, 130: 0 },
@@ -187,7 +192,7 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
     const sparseElection = { ...election, id: "sparse-election" };
     await acknowledgeElection(d1, sparseElection.id, "sparse-voter", at);
     await replaceBallot(d1, sparseElection.id, "sparse-voter", [0], at);
-    expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, sparseElection))).toEqual({
+    expect(condorcetOf([0, 87, 130], await readPairwiseCounts(d1, sparseElection))).toEqual({
       matrix: {
         0: { 0: 0, 87: 1, 130: 1 },
         87: { 0: 0, 87: 0, 130: 0 },
@@ -206,7 +211,7 @@ it("handles empty data, complete rankings, sparse ballots, and Condorcet cycles"
       await acknowledgeElection(d1, cycleElection.id, ballot.voterId, at);
       await replaceBallot(d1, cycleElection.id, ballot.voterId, ballot.ranking, at);
     }
-    expect(summarizeCondorcet([0, 87, 130], await readPairwiseCounts(d1, cycleElection))).toEqual({
+    expect(condorcetOf([0, 87, 130], await readPairwiseCounts(d1, cycleElection))).toEqual({
       matrix: {
         0: { 0: 0, 87: 2, 130: 1 },
         87: { 0: 1, 87: 0, 130: 2 },

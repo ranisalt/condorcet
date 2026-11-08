@@ -1,6 +1,5 @@
-import { summarizeCondorcet, type PairwiseCount } from "./condorcet.ts";
 import examples from "./explainers.json" with { type: "json" };
-import { summarizeMethods } from "./voting-methods.ts";
+import { explainTally, tally, type PairwiseCount } from "./voting-methods.ts";
 
 export const letters = ["A", "B", "C"] as const;
 export type Letter = (typeof letters)[number];
@@ -116,24 +115,19 @@ export function firstRound(ballots: readonly BallotGroup[]): {
   return { finalists: [a, b], eliminated };
 }
 
-function winners(ballots: readonly BallotGroup[]) {
-  const { matrix, winnerId } = summarizeCondorcet(candidateIds, pairwise(ballots));
-  return { winnerId, ...summarizeMethods(candidateIds, matrix) };
-}
-
 const toLetters = (ids: readonly number[]) => ids.map((id) => letters[id]);
 
 /** The strict Condorcet winner, or null when there is a cycle. */
 export function condorcetWinner(ballots: readonly BallotGroup[]): Letter | null {
-  const { winnerId } = winners(ballots);
-  return winnerId === null ? null : letters[winnerId];
+  const { condorcetWinnerId } = tally(candidateIds, pairwise(ballots));
+  return condorcetWinnerId === null ? null : letters[condorcetWinnerId];
 }
 
 /** The winner Copeland, Schulze and Tideman each pick, from the production algorithms. */
 export function methodWinners(
   ballots: readonly BallotGroup[],
 ): Record<"copeland" | "schulze" | "tideman", Letter[]> {
-  const result = winners(ballots);
+  const result = tally(candidateIds, pairwise(ballots)).methods;
   return {
     copeland: toLetters(result.copeland.winnerIds),
     schulze: toLetters(result.schulze.winnerIds),
@@ -150,18 +144,13 @@ export function sharedWinner(ballots: readonly BallotGroup[]): Letter {
   return schulze[0];
 }
 
-/** Tideman: duels by margin then winning votes, each locked unless it closes a cycle. */
+/** Tideman, as the production Ranked Pairs locks it: duels by margin then winning votes. */
 export function lockSequence(ballots: readonly BallotGroup[]): { duel: Duel; locked: boolean }[] {
-  const ordered = duels(ballots).sort(
-    (a, b) => margin(b) - margin(a) || b.winnerVotes - a.winnerVotes,
-  );
-  const locked: Duel[] = [];
-  const reaches = (from: Letter, to: Letter): boolean =>
-    from === to || locked.some((edge) => edge.winner === from && reaches(edge.loser, to));
-  return ordered.map((d) => {
-    const lock = !reaches(d.loser, d.winner);
-    if (lock) locked.push(d);
-    return { duel: d, locked: lock };
+  return explainTally(candidateIds, pairwise(ballots)).rankedPairs.map((step) => {
+    const winner = letters[step.winnerId];
+    const loser = letters[step.loserId];
+    if (step.locked === null) throw new Error(`Locking ${winner}×${loser} depends on a tie order`);
+    return { duel: duel(ballots, winner, loser), locked: step.locked };
   });
 }
 
@@ -181,24 +170,20 @@ export function lockedOrder(ballots: readonly BallotGroup[]): Letter[] {
   return [...letters].sort((a, b) => beatenBy(a) - beatenBy(b));
 }
 
-/** Schulze strongest path for exactly three candidates: the direct win or a two-step chain. */
+/** The production Schulze strongest path from one candidate to another, with each link's duel. */
 export function strongestPath(
   ballots: readonly BallotGroup[],
   from: Letter,
   to: Letter,
 ): { path: Letter[]; strength: number; links: Duel[] } {
-  const win = (x: Letter, y: Letter) => {
-    const d = duel(ballots, x, y);
-    return d.winner === x ? d.winnerVotes : 0;
-  };
-  const middle = letters.find((l) => l !== from && l !== to);
-  if (middle === undefined) throw new Error(`No middle candidate between ${from} and ${to}`);
-  const direct = win(from, to);
-  const indirect = Math.min(win(from, middle), win(middle, to));
-  const path = direct >= indirect ? [from, to] : [from, middle, to];
+  const { path: ids, strength } = explainTally(candidateIds, pairwise(ballots)).schulze[
+    letters.indexOf(from)
+  ][letters.indexOf(to)];
+  if (ids.length === 0) throw new Error(`No path from ${from} to ${to}`);
+  const path = toLetters(ids);
   return {
     path,
-    strength: Math.max(direct, indirect),
+    strength,
     links: path.slice(1).map((step, index) => duel(ballots, path[index], step)),
   };
 }

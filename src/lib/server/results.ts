@@ -1,7 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { summarizeCondorcet } from "../condorcet.ts";
-import type { CondorcetSummary, PairwiseCount } from "../condorcet.ts";
-import { summarizeMethods } from "../voting-methods.ts";
+import { tally, type PairwiseCount, type Tally } from "../voting-methods.ts";
 import type { Election } from "../election.ts";
 import {
   buildElectionCountsQuery,
@@ -25,9 +23,9 @@ export type ResultsView =
       validCount: number;
       blankCount: number;
       threshold: number | null;
-      matrix: CondorcetSummary["matrix"];
-      winnerId: number | null;
-      methods: ReturnType<typeof summarizeMethods>;
+      matrix: Tally["matrix"];
+      winnerId: Tally["condorcetWinnerId"];
+      methods: Tally["methods"];
     };
 
 /**
@@ -118,15 +116,15 @@ export async function readResults(
   if (snapshotReason !== null) return locked(threshold, snapshotCounts.validCount, snapshotReason);
 
   const candidateIds = election.candidates.map((candidate) => candidate.id);
-  const summary = summarizeCondorcet(candidateIds, pairs);
+  const { matrix, condorcetWinnerId, methods } = tally(candidateIds, pairs);
 
   return {
     state: "available",
     validCount: snapshotCounts.validCount,
     blankCount: snapshotCounts.blankCount,
     threshold,
-    matrix: summary.matrix,
-    winnerId: summary.winnerId,
-    methods: summarizeMethods(candidateIds, summary.matrix),
+    matrix,
+    winnerId: condorcetWinnerId,
+    methods,
   };
 }

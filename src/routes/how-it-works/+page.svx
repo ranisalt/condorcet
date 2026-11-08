@@ -27,7 +27,7 @@
     supporters,
     total,
   } from "#lib/explainers.ts";
-  import { describeBallots, groupCounts, scoreLine } from "#lib/explainer-copy.ts";
+  import { describeBallots, groupCounts } from "#lib/explainer-copy.ts";
 
   const voters = total(squeeze);
   const first = firstChoices(squeeze);
@@ -94,7 +94,7 @@ Na eleição presidencial brasileira, a candidatura precisa de mais da metade do
 
 Com os mesmos {voters} votos, ninguém passa de {voters / 2}. {finalists[0]} e {finalists[1]} vão ao segundo turno, e {eliminated}, com {first[eliminated]}, é eliminada. No segundo turno, quem tinha votado em {eliminated} escolhe entre {finalists[0]} e {finalists[1]}. Na cédula ordenada, essa escolha já está marcada: basta ver quem cada pessoa colocou mais acima.
 
-<DuelTally ballots={squeeze} x={runoffDuel.winner} y={runoffDuel.loser} caption={`Os grupos de ${groupCounts(forRunoffWinnerOverRunnerUp)} pessoas colocaram ${runoffDuel.winner} acima de ${runoffDuel.loser}, somando ${total(forRunoffWinnerOverRunnerUp)}. O grupo de ${groupCounts(forRunnerUpOverRunoffWinner)} pessoas colocou ${runoffDuel.loser} acima de ${runoffDuel.winner}. ${runoffDuel.winner} vence o segundo turno por ${scoreLine(runoffDuel)} e é eleita.`} />
+<DuelTally ballots={squeeze} x={runoffDuel.winner} y={runoffDuel.loser} caption={`Os grupos de ${groupCounts(forRunoffWinnerOverRunnerUp)} pessoas colocaram ${runoffDuel.winner} acima de ${runoffDuel.loser}, somando ${total(forRunoffWinnerOverRunnerUp)}. O grupo de ${groupCounts(forRunnerUpOverRunoffWinner)} pessoas colocou ${runoffDuel.loser} acima de ${runoffDuel.winner}. ${runoffDuel.winner} vence o segundo turno por ${m.explainer_score_line(runoffDuel)} e é eleita.`} />
 
 </section>
 
@@ -104,7 +104,7 @@ Com os mesmos {voters} votos, ninguém passa de {voters / 2}. {finalists[0]} e {
 
 Do mesmo jeito, a cédula ordenada permite simular um segundo turno entre qualquer par de candidaturas, inclusive com {eliminated}, que foi eliminada. Para saber quem venceria entre {eliminated} e {runoffDuel.winner}, olhe cada cartão e veja qual das duas está mais acima. A terceira candidatura não importa nesse confronto.
 
-<DuelTally ballots={squeeze} x={eliminated} y={runoffDuel.winner} caption={`Os grupos de ${groupCounts(forConsensus)} pessoas colocaram ${eliminated} acima de ${runoffDuel.winner}, somando ${total(forConsensus)}. O grupo de ${groupCounts(forRunoffWinner)} pessoas colocou ${runoffDuel.winner} acima de ${eliminated}. Num segundo turno entre as duas, ${eliminated} venceria ${runoffDuel.winner} por ${scoreLine(consensusOverWinner)}.`} />
+<DuelTally ballots={squeeze} x={eliminated} y={runoffDuel.winner} caption={`Os grupos de ${groupCounts(forConsensus)} pessoas colocaram ${eliminated} acima de ${runoffDuel.winner}, somando ${total(forConsensus)}. O grupo de ${groupCounts(forRunoffWinner)} pessoas colocou ${runoffDuel.winner} acima de ${eliminated}. Num segundo turno entre as duas, ${eliminated} venceria ${runoffDuel.winner} por ${m.explainer_score_line(consensusOverWinner)}.`} />
 
 </section>
 
@@ -114,7 +114,7 @@ Do mesmo jeito, a cédula ordenada permite simular um segundo turno entre qualqu
 
 Imagine que cada candidatura enfrenta cada outra em um confronto direto, como num campeonato de pontos corridos. A vencedora de Condorcet é a candidatura que vence todos os seus confrontos. Ela é estrita porque precisa vencer cada um deles: empatar qualquer confronto impede esse resultado.
 
-<DuelBars duels={[consensusOverWinner, consensusOverRunnerUp]} caption={`${eliminated} vence ${runoffDuel.winner} por ${scoreLine(consensusOverWinner)} e vence ${runoffDuel.loser} por ${scoreLine(consensusOverRunnerUp)}. ${eliminated} é a vencedora estrita de Condorcet, embora seja a primeira opção de apenas ${first[eliminated]} pessoas.`} />
+<DuelBars duels={[consensusOverWinner, consensusOverRunnerUp]} caption={`${eliminated} vence ${runoffDuel.winner} por ${m.explainer_score_line(consensusOverWinner)} e vence ${runoffDuel.loser} por ${m.explainer_score_line(consensusOverRunnerUp)}. ${eliminated} é a vencedora estrita de Condorcet, embora seja a primeira opção de apenas ${first[eliminated]} pessoas.`} />
 
 {eliminated} ficou em último no primeiro turno e foi eliminada, mas venceria qualquer adversária num segundo turno. O sistema de dois turnos elegeu {runoffDuel.winner}, embora {consensusOverWinner.winnerVotes} de {voters} pessoas preferissem {eliminated} a {runoffDuel.winner}. Isso pode acontecer com uma candidatura de consenso, que é a segunda opção de muita gente, mas a primeira de pouca.
 
@@ -128,7 +128,7 @@ Pode acontecer de nenhuma candidatura vencer todos os confrontos, como em pedra,
 
 <BallotCards ballots={cycle} caption={describeBallots(cycle)} />
 
-<CycleTriangle duels={duels(cycle)} caption={`Cada seta vai da candidatura que vence para a que perde. A vence B por ${scoreLine(cycleAB)}, B vence C por ${scoreLine(cycleBC)} e C vence A por ${scoreLine(cycleCA)}. As setas fecham um círculo, então ninguém vence todos.`} />
+<CycleTriangle duels={duels(cycle)} caption={`Cada seta vai da candidatura que vence para a que perde. A vence B por ${m.explainer_score_line(cycleAB)}, B vence C por ${m.explainer_score_line(cycleBC)} e C vence A por ${m.explainer_score_line(cycleCA)}. As setas fecham um círculo, então ninguém vence todos.`} />
 
 </section>
 
@@ -140,7 +140,7 @@ Quando existe uma vencedora estrita de Condorcet, os três métodos abaixo a esc
 
 <BallotCards ballots={uneven} caption={describeBallots(uneven)} />
 
-<CycleTriangle duels={duels(uneven)} caption={`B vence C por ${scoreLine(unevenBC)}, A vence B por ${scoreLine(unevenAB)} e C vence A por ${scoreLine(unevenCA)}. É um ciclo, mas algumas vitórias são mais folgadas que outras.`} />
+<CycleTriangle duels={duels(uneven)} caption={`B vence C por ${m.explainer_score_line(unevenBC)}, A vence B por ${m.explainer_score_line(unevenAB)} e C vence A por ${m.explainer_score_line(unevenCA)}. É um ciclo, mas algumas vitórias são mais folgadas que outras.`} />
 
 </section>
 
@@ -172,7 +172,7 @@ Para cada par, o método compara o caminho mais forte de uma até a outra com o 
 
 ## Tideman: pares ranqueados
 
-A margem de uma vitória é a diferença entre os votos de quem venceu e de quem perdeu. Por exemplo, {scoreLine(widest)} dá margem de {margin(widest)}. O método começa pela vitória de maior margem e trava cada resultado, ou seja, o aceita como definitivo. Uma vitória que fecharia um ciclo com as já travadas é ignorada. No fim, as vitórias travadas formam uma ordem, e quem fica no topo vence.
+A margem de uma vitória é a diferença entre os votos de quem venceu e de quem perdeu. Por exemplo, {m.explainer_score_line(widest)} dá margem de {margin(widest)}. O método começa pela vitória de maior margem e trava cada resultado, ou seja, o aceita como definitivo. Uma vitória que fecharia um ciclo com as já travadas é ignorada. No fim, as vitórias travadas formam uma ordem, e quem fica no topo vence.
 
 Se duas vitórias têm a mesma margem, vem primeiro a que tem mais votos vencedores. Se ainda houver empate, o método considera todas as ordens possíveis entre elas.
 

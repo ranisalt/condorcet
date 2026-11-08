@@ -1,6 +1,6 @@
 import { getLocale } from "#lib/paraglide/runtime.js";
 import { m } from "#lib/paraglide/messages.js";
-import type { BallotGroup, Duel, Letter } from "./explainers.ts";
+import type { BallotGroup, Letter } from "./explainers.ts";
 
 /** "A, depois B, depois C": readable aloud, unlike "A > B > C". */
 export function spokenOrder(order: readonly Letter[]): string {
@@ -18,10 +18,6 @@ export function describeBallots(ballots: readonly BallotGroup[]): string {
         : m.explainer_prefers({ count, order: spokenOrder(order) }),
     )
     .join(" ");
-}
-
-export function scoreLine(d: Duel): string {
-  return m.explainer_score_line(d);
 }
 
 /** The group sizes as a list: "35 e 33". */
