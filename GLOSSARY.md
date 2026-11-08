@@ -10,4 +10,4 @@
 
 **Voter session**: the signed cookie that carries the voter's opaque `sub` for one day.
 
-**Results gate**: the rule that hides results until the voter has submitted and the valid-ballot count reaches the election's threshold. Checked on a cheap precheck, then again on the snapshot the outcome is computed from.
+**Results gate**: the rule that hides results until the voter has submitted and the valid-ballot count reaches the `RESULTS_THRESHOLD` deployment setting. Checked on a cheap precheck, then again on the snapshot the outcome is computed from.
