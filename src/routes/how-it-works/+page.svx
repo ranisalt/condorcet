@@ -9,52 +9,49 @@
   import SchulzePaths from "#lib/components/explainers/SchulzePaths.svelte";
   import TallyBars from "#lib/components/explainers/TallyBars.svelte";
   import {
-    copelandScores,
-    cycle,
+    condorcetWinner,
     duel,
     duels,
     firstChoices,
+    firstRound,
     lockedOrder,
+    margin,
+    sharedCopelandRecord,
+    sharedWinner,
+    skippedDuel,
     lockSequence,
     squeeze,
-    strength,
+    cycle,
+    uneven,
     strongestPath,
     supporters,
     total,
-    type BallotGroup,
-    type Duel,
   } from "#lib/explainers.ts";
-
-  const describe = (ballots: readonly BallotGroup[]) =>
-    ballots
-      .map(({ count, order }) =>
-        `${count} ${count === 1 ? "pessoa prefere" : "pessoas preferem"} ${order.join(", depois ")}.`,
-      )
-      .join(" ");
-  const score = (d: Duel) => `${d.winnerVotes} a ${d.loserVotes}`;
-  const margin = (d: Duel) => d.winnerVotes - d.loserVotes;
-  const counts = (ballots: readonly BallotGroup[]) => ballots.map((g) => g.count).join(" e ");
+  import { describeBallots, groupCounts, scoreLine } from "#lib/explainer-copy.ts";
 
   const voters = total(squeeze);
   const first = firstChoices(squeeze);
-  const runoff = duel(squeeze, "A", "B");
-  const cOverA = duel(squeeze, "C", "A");
-  const cOverB = duel(squeeze, "C", "B");
-  const forC = supporters(squeeze, "C", "A");
-  const forA = supporters(squeeze, "A", "C");
-  const forAOverB = supporters(squeeze, "A", "B");
-  const forBOverA = supporters(squeeze, "B", "A");
+  const { finalists, eliminated } = firstRound(squeeze);
+  const [plurality, runnerUp] = finalists;
+  if (condorcetWinner(squeeze) !== eliminated) throw new Error("The eliminated candidate must be the Condorcet winner");
+  const runoffDuel = duel(squeeze, plurality, runnerUp);
+  const consensusOverWinner = duel(squeeze, eliminated, runoffDuel.winner);
+  const consensusOverRunnerUp = duel(squeeze, eliminated, runoffDuel.loser);
+  const forConsensus = supporters(squeeze, eliminated, runoffDuel.winner);
+  const forRunoffWinner = supporters(squeeze, runoffDuel.winner, eliminated);
+  const forRunoffWinnerOverRunnerUp = supporters(squeeze, runoffDuel.winner, runoffDuel.loser);
+  const forRunnerUpOverRunoffWinner = supporters(squeeze, runoffDuel.loser, runoffDuel.winner);
   const [cycleAB, cycleBC, cycleCA] = duels(cycle);
-  const [strongAB, strongBC, strongCA] = duels(strength);
-  const steps = lockSequence(strength);
-  const skipped = steps.find((step) => !step.locked)?.duel ?? strongCA;
-  const widest = steps[0].duel;
-  const order = lockedOrder(strength);
-  const copeland = copelandScores(strength);
-  const pathAB = strongestPath(strength, "A", "B");
-  const pathBA = strongestPath(strength, "B", "A");
-  const pathAC = strongestPath(strength, "A", "C");
-  const pathCA = strongestPath(strength, "C", "A");
+  const [unevenAB, unevenBC, unevenCA] = duels(uneven);
+  const widest = lockSequence(uneven)[0].duel;
+  const skipped = skippedDuel(uneven);
+  const order = lockedOrder(uneven);
+  const copelandTie = sharedCopelandRecord(uneven);
+  const agreedWinner = sharedWinner(uneven);
+  const pathAB = strongestPath(uneven, "A", "B");
+  const pathBA = strongestPath(uneven, "B", "A");
+  const pathAC = strongestPath(uneven, "A", "C");
+  const pathCA = strongestPath(uneven, "C", "A");
 </script>
 
 <svelte:head>
@@ -75,7 +72,7 @@ Os exemplos desta página são fictícios e usam três candidaturas: A, B e C. P
 
 Cada cartão abaixo representa um grupo de pessoas que votou da mesma forma. A primeira candidatura é a preferida, e a última é a menos preferida.
 
-<BallotCards ballots={squeeze} caption={describe(squeeze)} />
+<BallotCards ballots={squeeze} caption={describeBallots(squeeze)} />
 
 </section>
 
@@ -85,7 +82,7 @@ Cada cartão abaixo representa um grupo de pessoas que votou da mesma forma. A p
 
 É assim que se elege a prefeitura em municípios com até 200 mil eleitores. Cada pessoa vota em uma candidatura, e vence quem recebe mais votos, mesmo sem maioria absoluta. Só a primeira opção de cada cédula conta. O restante da ordem é descartado.
 
-<TallyBars tallies={first} caption={`Contando só a primeira opção, A tem ${first.A} votos, B tem ${first.B} e C tem ${first.C}. Na pluralidade, A vence com ${first.A} de ${voters} votos.`} />
+<TallyBars tallies={first} caption={`Contando só a primeira opção, A tem ${first.A} votos, B tem ${first.B} e C tem ${first.C}. Na pluralidade, ${plurality} vence com ${first[plurality]} de ${voters} votos.`} />
 
 </section>
 
@@ -95,9 +92,9 @@ Cada cartão abaixo representa um grupo de pessoas que votou da mesma forma. A p
 
 Na eleição presidencial brasileira, a candidatura precisa de mais da metade dos votos válidos para vencer no primeiro turno. Sem essa maioria, as duas candidaturas mais votadas disputam o segundo turno.
 
-Com os mesmos {voters} votos, ninguém passa de {voters / 2}. A e B vão ao segundo turno, e C, com {first.C}, é eliminada. No segundo turno, quem tinha votado em C escolhe entre A e B. Na cédula ordenada, essa escolha já está marcada: basta ver quem cada pessoa colocou mais acima.
+Com os mesmos {voters} votos, ninguém passa de {voters / 2}. {finalists[0]} e {finalists[1]} vão ao segundo turno, e {eliminated}, com {first[eliminated]}, é eliminada. No segundo turno, quem tinha votado em {eliminated} escolhe entre {finalists[0]} e {finalists[1]}. Na cédula ordenada, essa escolha já está marcada: basta ver quem cada pessoa colocou mais acima.
 
-<DuelTally ballots={squeeze} x="A" y="B" caption={`Os grupos de ${counts(forAOverB)} pessoas colocaram A acima de B, somando ${total(forAOverB)}. O grupo de ${counts(forBOverA)} pessoas colocou B acima de A. A vence o segundo turno por ${score(runoff)} e é eleita.`} />
+<DuelTally ballots={squeeze} x={runoffDuel.winner} y={runoffDuel.loser} caption={`Os grupos de ${groupCounts(forRunoffWinnerOverRunnerUp)} pessoas colocaram ${runoffDuel.winner} acima de ${runoffDuel.loser}, somando ${total(forRunoffWinnerOverRunnerUp)}. O grupo de ${groupCounts(forRunnerUpOverRunoffWinner)} pessoas colocou ${runoffDuel.loser} acima de ${runoffDuel.winner}. ${runoffDuel.winner} vence o segundo turno por ${scoreLine(runoffDuel)} e é eleita.`} />
 
 </section>
 
@@ -105,9 +102,9 @@ Com os mesmos {voters} votos, ninguém passa de {voters / 2}. A e B vão ao segu
 
 ## Confronto direto entre duas candidaturas
 
-Do mesmo jeito, a cédula ordenada permite simular um segundo turno entre qualquer par de candidaturas, inclusive com C, que foi eliminada. Para saber quem venceria entre C e A, olhe cada cartão e veja qual das duas está mais acima. A terceira candidatura não importa nesse confronto.
+Do mesmo jeito, a cédula ordenada permite simular um segundo turno entre qualquer par de candidaturas, inclusive com {eliminated}, que foi eliminada. Para saber quem venceria entre {eliminated} e {runoffDuel.winner}, olhe cada cartão e veja qual das duas está mais acima. A terceira candidatura não importa nesse confronto.
 
-<DuelTally ballots={squeeze} x="C" y="A" caption={`Os grupos de ${counts(forC)} pessoas colocaram C acima de A, somando ${total(forC)}. O grupo de ${counts(forA)} pessoas colocou A acima de C. Num segundo turno entre as duas, C venceria A por ${score(cOverA)}.`} />
+<DuelTally ballots={squeeze} x={eliminated} y={runoffDuel.winner} caption={`Os grupos de ${groupCounts(forConsensus)} pessoas colocaram ${eliminated} acima de ${runoffDuel.winner}, somando ${total(forConsensus)}. O grupo de ${groupCounts(forRunoffWinner)} pessoas colocou ${runoffDuel.winner} acima de ${eliminated}. Num segundo turno entre as duas, ${eliminated} venceria ${runoffDuel.winner} por ${scoreLine(consensusOverWinner)}.`} />
 
 </section>
 
@@ -117,9 +114,9 @@ Do mesmo jeito, a cédula ordenada permite simular um segundo turno entre qualqu
 
 Imagine que cada candidatura enfrenta cada outra em um confronto direto, como num campeonato de pontos corridos. A vencedora de Condorcet é a candidatura que vence todos os seus confrontos. Ela é estrita porque precisa vencer cada um deles: empatar qualquer confronto impede esse resultado.
 
-<DuelBars duels={[cOverA, cOverB]} caption={`C vence A por ${score(cOverA)} e vence B por ${score(cOverB)}. C é a vencedora estrita de Condorcet, embora seja a primeira opção de apenas ${first.C} pessoas.`} />
+<DuelBars duels={[consensusOverWinner, consensusOverRunnerUp]} caption={`${eliminated} vence ${runoffDuel.winner} por ${scoreLine(consensusOverWinner)} e vence ${runoffDuel.loser} por ${scoreLine(consensusOverRunnerUp)}. ${eliminated} é a vencedora estrita de Condorcet, embora seja a primeira opção de apenas ${first[eliminated]} pessoas.`} />
 
-C ficou em último no primeiro turno e foi eliminada, mas venceria qualquer adversária num segundo turno. O sistema de dois turnos elegeu A, embora {cOverA.winnerVotes} de {voters} pessoas preferissem C a A. Isso pode acontecer com uma candidatura de consenso, que é a segunda opção de muita gente, mas a primeira de pouca.
+{eliminated} ficou em último no primeiro turno e foi eliminada, mas venceria qualquer adversária num segundo turno. O sistema de dois turnos elegeu {runoffDuel.winner}, embora {consensusOverWinner.winnerVotes} de {voters} pessoas preferissem {eliminated} a {runoffDuel.winner}. Isso pode acontecer com uma candidatura de consenso, que é a segunda opção de muita gente, mas a primeira de pouca.
 
 </section>
 
@@ -129,9 +126,9 @@ C ficou em último no primeiro turno e foi eliminada, mas venceria qualquer adve
 
 Pode acontecer de nenhuma candidatura vencer todos os confrontos, como em pedra, papel e tesoura: a pedra vence a tesoura, a tesoura vence o papel, e o papel vence a pedra. Cada cédula tem uma ordem coerente, mas o conjunto não forma uma ordem coletiva. Nesse caso, não existe vencedora estrita de Condorcet, e é preciso um método para escolher entre as candidaturas do ciclo.
 
-<BallotCards ballots={cycle} caption={describe(cycle)} />
+<BallotCards ballots={cycle} caption={describeBallots(cycle)} />
 
-<CycleTriangle duels={duels(cycle)} caption={`Cada seta vai da candidatura que vence para a que perde. A vence B por ${score(cycleAB)}, B vence C por ${score(cycleBC)} e C vence A por ${score(cycleCA)}. As setas fecham um círculo, então ninguém vence todos.`} />
+<CycleTriangle duels={duels(cycle)} caption={`Cada seta vai da candidatura que vence para a que perde. A vence B por ${scoreLine(cycleAB)}, B vence C por ${scoreLine(cycleBC)} e C vence A por ${scoreLine(cycleCA)}. As setas fecham um círculo, então ninguém vence todos.`} />
 
 </section>
 
@@ -139,11 +136,11 @@ Pode acontecer de nenhuma candidatura vencer todos os confrontos, como em pedra,
 
 ## Quando há um ciclo
 
-Quando existe uma vencedora estrita de Condorcet, os três métodos abaixo a escolhem. Eles só diferem quando há um ciclo. Para compará-los, usamos outro exemplo fictício de {total(strength)} votos, que também forma um ciclo, mas com confrontos de força diferente.
+Quando existe uma vencedora estrita de Condorcet, os três métodos abaixo a escolhem. Eles só diferem quando há um ciclo. Para compará-los, usamos outro exemplo fictício de {total(uneven)} votos, que também forma um ciclo, mas com confrontos de força diferente.
 
-<BallotCards ballots={strength} caption={describe(strength)} />
+<BallotCards ballots={uneven} caption={describeBallots(uneven)} />
 
-<CycleTriangle duels={duels(strength)} caption={`B vence C por ${score(strongBC)}, A vence B por ${score(strongAB)} e C vence A por ${score(strongCA)}. É um ciclo, mas algumas vitórias são mais folgadas que outras.`} />
+<CycleTriangle duels={duels(uneven)} caption={`B vence C por ${scoreLine(unevenBC)}, A vence B por ${scoreLine(unevenAB)} e C vence A por ${scoreLine(unevenCA)}. É um ciclo, mas algumas vitórias são mais folgadas que outras.`} />
 
 </section>
 
@@ -155,7 +152,7 @@ Quando existe uma vencedora estrita de Condorcet, os três métodos abaixo a esc
 
 É o campeonato de pontos corridos. Em cada confronto, uma vitória vale 1 ponto, uma derrota vale −1 e um empate vale 0. A pontuação é o total de vitórias menos derrotas. Vence quem tem a maior pontuação, e todas as candidaturas com a maior pontuação permanecem empatadas.
 
-<CopelandTable ballots={strength} caption={`No ciclo, cada candidatura vence um confronto e perde outro. As três ficam com saldo ${copeland.A}, e o Copeland termina em empate.`} />
+<CopelandTable ballots={uneven} caption={`No ciclo, cada candidatura tem ${copelandTie.wins} vitória e ${copelandTie.losses} derrota. As três ficam com saldo ${copelandTie.score}, e o Copeland termina em empate.`} />
 
 </div>
 
@@ -167,7 +164,7 @@ Mesmo perdendo para A, B pode chegar a A por tabela: B vence C, e C vence A. Uma
 
 Para cada par, o método compara o caminho mais forte de uma até a outra com o caminho mais forte de volta. Vence o método a candidatura que ganha todas essas comparações.
 
-<SchulzePaths ballots={strength} pairs={[["A", "B"], ["A", "C"]]} caption={`O número sublinhado em cada linha é o elo mais fraco, que define a força do caminho. O caminho mais forte de A até B tem força ${pathAB.strength}, e o de B até A tem ${pathBA.strength}. De A até C, a força é ${pathAC.strength}, e de C até A, ${pathCA.strength}. A vence as duas comparações.`} />
+<SchulzePaths ballots={uneven} pairs={[["A", "B"], ["A", "C"]]} caption={`O número sublinhado em cada linha é o elo mais fraco, que define a força do caminho. O caminho mais forte de A até B tem força ${pathAB.strength}, e o de B até A tem ${pathBA.strength}. De A até C, a força é ${pathAC.strength}, e de C até A, ${pathCA.strength}. A vence as duas comparações.`} />
 
 </div>
 
@@ -175,11 +172,11 @@ Para cada par, o método compara o caminho mais forte de uma até a outra com o 
 
 ## Tideman: pares ranqueados
 
-A margem de uma vitória é a diferença entre os votos de quem venceu e de quem perdeu. Por exemplo, {score(widest)} dá margem de {margin(widest)}. O método começa pela vitória de maior margem e trava cada resultado, ou seja, o aceita como definitivo. Uma vitória que fecharia um ciclo com as já travadas é ignorada. No fim, as vitórias travadas formam uma ordem, e quem fica no topo vence.
+A margem de uma vitória é a diferença entre os votos de quem venceu e de quem perdeu. Por exemplo, {scoreLine(widest)} dá margem de {margin(widest)}. O método começa pela vitória de maior margem e trava cada resultado, ou seja, o aceita como definitivo. Uma vitória que fecharia um ciclo com as já travadas é ignorada. No fim, as vitórias travadas formam uma ordem, e quem fica no topo vence.
 
 Se duas vitórias têm a mesma margem, vem primeiro a que tem mais votos vencedores. Se ainda houver empate, o método considera todas as ordens possíveis entre elas.
 
-<LockSteps ballots={strength} caption={`A vitória de ${skipped.winner} sobre ${skipped.loser} é a mais apertada e fecharia o ciclo, então é ignorada. As vitórias travadas formam a ordem ${order.join(", ")}, e ${order[0]} vence.`} />
+<LockSteps ballots={uneven} caption={`A vitória de ${skipped.winner} sobre ${skipped.loser} é a mais apertada e fecharia o ciclo, então é ignorada. As vitórias travadas formam a ordem ${order.join(", ")}, e ${order[0]} vence.`} />
 
 </div>
 
@@ -193,11 +190,11 @@ Nenhum método resolve todos os casos. A tabela resume o ponto fraco de cada um.
 
 | Método | Ponto fraco | Nos exemplos |
 | --- | --- | --- |
-| Pluralidade | Pode eleger quem a maioria rejeita, porque só considera a primeira opção. | A vence com {first.A} de {voters} votos, embora {cOverA.winnerVotes} prefiram C. |
-| Dois turnos | Pode eliminar no primeiro turno quem venceria todos os confrontos diretos. | C é eliminada no primeiro turno. |
+| Pluralidade | Pode eleger quem a maioria rejeita, porque só considera a primeira opção. | {plurality} vence com {first[plurality]} de {voters} votos, embora {consensusOverWinner.winnerVotes} prefiram {eliminated} a {plurality}. |
+| Dois turnos | Pode eliminar no primeiro turno quem venceria todos os confrontos diretos. | {eliminated} é eliminada no primeiro turno. |
 | Condorcet estrito | Não aponta vencedora quando há um ciclo. | O ciclo entre A, B e C. |
-| Copeland | Empata com frequência quando há um ciclo. | As três candidaturas ficam com saldo {copeland.A}. |
-| Schulze e Tideman | São difíceis de conferir à mão. Em situações específicas com quatro ou mais candidaturas, votar pode piorar o resultado para a preferida de quem votou. Isso vale para qualquer método de Condorcet. | Os dois escolhem A por caminhos diferentes. |
+| Copeland | Empata com frequência quando há um ciclo. | As três candidaturas ficam com saldo {copelandTie.score}. |
+| Schulze e Tideman | São difíceis de conferir à mão. Em situações específicas com quatro ou mais candidaturas, votar pode piorar o resultado para a preferida de quem votou. Qualquer método de Condorcet está sujeito a isso. | Os dois escolhem {agreedWinner} por caminhos diferentes. |
 
 </section>
 

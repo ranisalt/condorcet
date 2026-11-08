@@ -2,6 +2,7 @@
   import { supporters, total, type BallotGroup, type Letter } from "#lib/explainers.ts";
   import { m } from "#lib/paraglide/messages.js";
   import BallotCard from "./BallotCard.svelte";
+  import Explainer from "./Explainer.svelte";
 
   let {
     ballots,
@@ -20,7 +21,7 @@
   );
 </script>
 
-<figure class="explainer">
+<Explainer {caption}>
   <div class="tally">
     {#each sides as side (side.above)}
       <div class="tally-side">
@@ -38,5 +39,4 @@
       </div>
     {/each}
   </div>
-  <figcaption>{caption}</figcaption>
-</figure>
+</Explainer>

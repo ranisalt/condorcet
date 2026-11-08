@@ -148,5 +148,9 @@
   "explainer_score": "Saldo",
   "explainer_path_strength": "força {strength}",
   "explainer_ranked_above": "Colocaram {winner} acima de {loser}",
-  "explainer_final_order": "Ordem final"
+  "explainer_final_order": "Ordem final",
+  "explainer_prefers_one": "{count} pessoa prefere {order}.",
+  "explainer_prefers": "{count} pessoas preferem {order}.",
+  "explainer_then": "{before}, depois {after}",
+  "explainer_score_line": "{winnerVotes} a {loserVotes}"
 }

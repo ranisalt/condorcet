@@ -1,5 +1,6 @@
-import type { PairwiseCount } from "./condorcet.ts";
+import { summarizeCondorcet, type PairwiseCount } from "./condorcet.ts";
 import examples from "./explainers.json" with { type: "json" };
+import { summarizeMethods } from "./voting-methods.ts";
 
 export const letters = ["A", "B", "C"] as const;
 export type Letter = (typeof letters)[number];
@@ -7,7 +8,11 @@ export type BallotGroup = { count: number; order: readonly Letter[] };
 export type Duel = { winner: Letter; loser: Letter; winnerVotes: number; loserVotes: number };
 
 /** IDs used when feeding the examples to the real algorithms: A=0, B=1, C=2. */
-export const candidateIds = [0, 1, 2] as const;
+const candidateIds = letters.map((_, id) => id);
+
+function perLetter<T>(value: (letter: Letter) => T): Record<Letter, T> {
+  return Object.fromEntries(letters.map((letter) => [letter, value(letter)])) as Record<Letter, T>;
+}
 
 function isLetter(value: string): value is Letter {
   return (letters as readonly string[]).includes(value);
@@ -25,7 +30,7 @@ function groups(raw: readonly { count: number; order: readonly string[] }[]): Ba
 
 export const cycle = groups(examples.cycle);
 export const squeeze = groups(examples.squeeze);
-export const strength = groups(examples.strength);
+export const uneven = groups(examples.uneven);
 
 export function total(ballots: readonly BallotGroup[]): number {
   return ballots.reduce((sum, { count }) => sum + count, 0);
@@ -67,24 +72,86 @@ export function duels(ballots: readonly BallotGroup[]): Duel[] {
   return [duel(ballots, "A", "B"), duel(ballots, "B", "C"), duel(ballots, "C", "A")];
 }
 
+export function margin(d: Duel): number {
+  return d.winnerVotes - d.loserVotes;
+}
+
 export function firstChoices(ballots: readonly BallotGroup[]): Record<Letter, number> {
-  const totals: Record<Letter, number> = { A: 0, B: 0, C: 0 };
+  const totals = perLetter(() => 0);
   for (const { count, order } of ballots) totals[order[0]] += count;
   return totals;
 }
 
-export function copelandScores(ballots: readonly BallotGroup[]): Record<Letter, number> {
-  const scores: Record<Letter, number> = { A: 0, B: 0, C: 0 };
-  for (const { winner, loser } of duels(ballots)) {
-    scores[winner] += 1;
-    scores[loser] -= 1;
+export type CopelandRecord = { wins: number; losses: number; score: number };
+
+export function copelandRecords(ballots: readonly BallotGroup[]): Record<Letter, CopelandRecord> {
+  const results = duels(ballots);
+  return perLetter((letter) => {
+    const wins = results.filter((d) => d.winner === letter).length;
+    const losses = results.filter((d) => d.loser === letter).length;
+    return { wins, losses, score: wins - losses };
+  });
+}
+
+/** The record every candidate shares when Copeland ties them all. */
+export function sharedCopelandRecord(ballots: readonly BallotGroup[]): CopelandRecord {
+  const records = copelandRecords(ballots);
+  const [first, ...rest] = letters.map((letter) => records[letter]);
+  const differs = (r: CopelandRecord) =>
+    r.wins !== first.wins || r.losses !== first.losses || r.score !== first.score;
+  if (rest.some(differs)) throw new Error("Copeland records differ");
+  return first;
+}
+
+/** The first round: the two most-voted first choices go on, the third is eliminated. */
+export function firstRound(ballots: readonly BallotGroup[]): {
+  finalists: [Letter, Letter];
+  eliminated: Letter;
+} {
+  const first = firstChoices(ballots);
+  if (letters.some((letter) => first[letter] * 2 > total(ballots))) {
+    throw new Error("Example has a first-round majority");
   }
-  return scores;
+  const [a, b, eliminated] = [...letters].sort((x, y) => first[y] - first[x]);
+  return { finalists: [a, b], eliminated };
+}
+
+function winners(ballots: readonly BallotGroup[]) {
+  const { matrix, winnerId } = summarizeCondorcet(candidateIds, pairwise(ballots));
+  return { winnerId, ...summarizeMethods(candidateIds, matrix) };
+}
+
+const toLetters = (ids: readonly number[]) => ids.map((id) => letters[id]);
+
+/** The strict Condorcet winner, or null when there is a cycle. */
+export function condorcetWinner(ballots: readonly BallotGroup[]): Letter | null {
+  const { winnerId } = winners(ballots);
+  return winnerId === null ? null : letters[winnerId];
+}
+
+/** The winner Copeland, Schulze and Tideman each pick, from the production algorithms. */
+export function methodWinners(
+  ballots: readonly BallotGroup[],
+): Record<"copeland" | "schulze" | "tideman", Letter[]> {
+  const result = winners(ballots);
+  return {
+    copeland: toLetters(result.copeland.winnerIds),
+    schulze: toLetters(result.schulze.winnerIds),
+    tideman: toLetters(result.rankedPairs.winnerIds),
+  };
+}
+
+/** The single winner Schulze and Tideman both pick, or an error if they disagree. */
+export function sharedWinner(ballots: readonly BallotGroup[]): Letter {
+  const { schulze, tideman } = methodWinners(ballots);
+  if (schulze.length !== 1 || tideman.length !== 1 || schulze[0] !== tideman[0]) {
+    throw new Error("Schulze and Tideman do not share one winner");
+  }
+  return schulze[0];
 }
 
 /** Tideman: duels by margin then winning votes, each locked unless it closes a cycle. */
 export function lockSequence(ballots: readonly BallotGroup[]): { duel: Duel; locked: boolean }[] {
-  const margin = (d: Duel) => d.winnerVotes - d.loserVotes;
   const ordered = duels(ballots).sort(
     (a, b) => margin(b) - margin(a) || b.winnerVotes - a.winnerVotes,
   );
@@ -96,6 +163,13 @@ export function lockSequence(ballots: readonly BallotGroup[]): { duel: Duel; loc
     if (lock) locked.push(d);
     return { duel: d, locked: lock };
   });
+}
+
+/** The duel Tideman ignores because it closes a cycle. */
+export function skippedDuel(ballots: readonly BallotGroup[]): Duel {
+  const skipped = lockSequence(ballots).find((step) => !step.locked);
+  if (!skipped) throw new Error("Example has no skipped duel");
+  return skipped.duel;
 }
 
 /** The ranking left by the locked duels, from the candidate nobody beats down. */
@@ -117,7 +191,8 @@ export function strongestPath(
     const d = duel(ballots, x, y);
     return d.winner === x ? d.winnerVotes : 0;
   };
-  const middle = letters.find((l) => l !== from && l !== to) ?? from;
+  const middle = letters.find((l) => l !== from && l !== to);
+  if (middle === undefined) throw new Error(`No middle candidate between ${from} and ${to}`);
   const direct = win(from, to);
   const indirect = Math.min(win(from, middle), win(middle, to));
   const path = direct >= indirect ? [from, to] : [from, middle, to];

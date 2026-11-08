@@ -2,6 +2,7 @@
   import { strongestPath, type BallotGroup, type Letter } from "#lib/explainers.ts";
   import { m } from "#lib/paraglide/messages.js";
   import CandidateChip from "./CandidateChip.svelte";
+  import Explainer from "./Explainer.svelte";
 
   let {
     ballots,
@@ -13,7 +14,7 @@
   );
 </script>
 
-<figure class="explainer">
+<Explainer {caption}>
   <ul class="explainer-list explainer-list--stack" aria-hidden="true">
     {#each routes as route (route.path.join(""))}
       <li class="chip-row">
@@ -28,5 +29,4 @@
       </li>
     {/each}
   </ul>
-  <figcaption>{caption}</figcaption>
-</figure>
+</Explainer>

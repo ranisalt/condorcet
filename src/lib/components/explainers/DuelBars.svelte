@@ -2,11 +2,12 @@
   import type { Duel } from "#lib/explainers.ts";
   import { m } from "#lib/paraglide/messages.js";
   import CandidateChip from "./CandidateChip.svelte";
+  import Explainer from "./Explainer.svelte";
 
   let { duels, caption }: { duels: readonly Duel[]; caption: string } = $props();
 </script>
 
-<figure class="explainer">
+<Explainer {caption}>
   <ul class="explainer-list explainer-list--stack">
     {#each duels as duel (duel.winner + duel.loser)}
       {@const share = (duel.winnerVotes / (duel.winnerVotes + duel.loserVotes)) * 100}
@@ -23,5 +24,4 @@
       </li>
     {/each}
   </ul>
-  <figcaption>{caption}</figcaption>
-</figure>
+</Explainer>

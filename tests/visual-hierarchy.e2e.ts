@@ -92,9 +92,12 @@ test("draws the first-choice bars in proportion to the votes", async ({ page }) 
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     const bars = await page
-      .locator(".tally-bar")
+      .locator("[data-votes]")
       .evaluateAll((spans) =>
-        spans.map((span) => [Number(span.textContent), span.getBoundingClientRect().width]),
+        spans.map((span) => [
+          Number(span.getAttribute("data-votes")),
+          span.getBoundingClientRect().width,
+        ]),
       );
     expect(bars).toHaveLength(3);
     const [[topVotes, topWidth]] = bars;

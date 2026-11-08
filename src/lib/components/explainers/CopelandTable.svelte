@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { copelandScores, duels, letters, type BallotGroup } from "#lib/explainers.ts";
+  import { copelandRecords, letters, type BallotGroup } from "#lib/explainers.ts";
   import { m } from "#lib/paraglide/messages.js";
   import CandidateChip from "./CandidateChip.svelte";
+  import Explainer from "./Explainer.svelte";
 
   let { ballots, caption }: { ballots: readonly BallotGroup[]; caption: string } = $props();
-  const results = $derived(duels(ballots));
-  const scores = $derived(copelandScores(ballots));
+  const records = $derived(copelandRecords(ballots));
 </script>
 
-<figure class="explainer">
+<Explainer {caption}>
   <table>
     <thead>
       <tr>
@@ -22,12 +22,11 @@
       {#each letters as letter (letter)}
         <tr>
           <th scope="row"><CandidateChip {letter} /></th>
-          <td>{results.filter((d) => d.winner === letter).length}</td>
-          <td>{results.filter((d) => d.loser === letter).length}</td>
-          <td>{scores[letter]}</td>
+          <td>{records[letter].wins}</td>
+          <td>{records[letter].losses}</td>
+          <td>{records[letter].score}</td>
         </tr>
       {/each}
     </tbody>
   </table>
-  <figcaption>{caption}</figcaption>
-</figure>
+</Explainer>

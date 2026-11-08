@@ -9,7 +9,7 @@
     { "count": 33, "order": ["B", "C", "A"] },
     { "count": 32, "order": ["C", "A", "B"] }
   ],
-  "strength": [
+  "uneven": [
     { "count": 40, "order": ["A", "B", "C"] },
     { "count": 35, "order": ["B", "C", "A"] },
     { "count": 25, "order": ["C", "A", "B"] }

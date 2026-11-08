@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Duel, Letter } from "#lib/explainers.ts";
+  import Explainer from "./Explainer.svelte";
 
   let { duels, caption, skipped }: { duels: readonly Duel[]; caption: string; skipped?: Duel } =
     $props();
@@ -11,7 +12,11 @@
     { letter: "B", x: 255, y: 220 },
     { letter: "C", x: 45, y: 220 },
   ];
-  const at = (letter: Letter) => nodes.find((node) => node.letter === letter) ?? nodes[0];
+  const at = (letter: Letter) => {
+    const node = nodes.find((candidate) => candidate.letter === letter);
+    if (!node) throw new Error(`No node for ${letter}`);
+    return node;
+  };
 
   function segment({ winner, loser }: Duel) {
     const from = at(winner);
@@ -32,7 +37,7 @@
   const isSkipped = (duel: Duel) => skipped?.winner === duel.winner && skipped.loser === duel.loser;
 </script>
 
-<figure class="explainer">
+<Explainer {caption}>
   <svg class="cycle-svg" viewBox="0 0 300 260" aria-hidden="true">
     <defs>
       <marker
@@ -86,5 +91,4 @@
       >
     {/each}
   </svg>
-  <figcaption>{caption}</figcaption>
-</figure>
+</Explainer>
