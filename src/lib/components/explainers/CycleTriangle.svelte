@@ -66,6 +66,9 @@
         dominant-baseline="middle"
         font-size="13"
         fill={isSkipped(duel) ? "var(--muted)" : "var(--ink)"}
+        stroke="var(--surface)"
+        stroke-width="4"
+        paint-order="stroke"
       >
         {isSkipped(duel) ? "✕ " : ""}{duel.winnerVotes}–{duel.loserVotes}
       </text>

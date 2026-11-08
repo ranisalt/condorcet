@@ -14,16 +14,17 @@
 </script>
 
 <figure class="explainer">
-  <ul class="explainer-list explainer-list--stack">
+  <ul class="explainer-list explainer-list--stack" aria-hidden="true">
     {#each routes as route (route.path.join(""))}
       <li class="chip-row">
-        <span class="chip-row" aria-label={route.path.join(" → ")}>
-          {#each route.path as letter, step (step)}
-            {#if step > 0}<span aria-hidden="true">→</span>{/if}
-            <CandidateChip {letter} />
-          {/each}
-        </span>
-        <span>{m.explainer_path_strength({ strength: route.strength })}</span>
+        <CandidateChip letter={route.path[0]} />
+        {#each route.links as link (link.loser)}
+          <span class="path-link"
+            >→ <span class:weakest={link.winnerVotes === route.strength}>{link.winnerVotes}</span> →</span
+          >
+          <CandidateChip letter={link.loser} />
+        {/each}
+        <strong>{m.explainer_path_strength({ strength: route.strength })}</strong>
       </li>
     {/each}
   </ul>

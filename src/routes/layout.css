@@ -945,6 +945,10 @@ progress::-moz-progress-bar {
   font-size: 0.875rem;
 }
 
+.method-card p + p {
+  margin-block-start: 0.75rem;
+}
+
 .education-page .method-limit-note {
   padding: 1.1rem;
   border: 1px solid var(--line);
@@ -1091,6 +1095,57 @@ progress::-moz-progress-bar {
 
 .lock-steps .skipped {
   color: var(--muted);
+}
+
+.final-order {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.tally-side h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.tally-sum {
+  margin: 0.5rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.tally-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.tally-bar {
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  border-radius: 0.3rem;
+  color: var(--surface);
+  font-weight: 700;
+}
+
+.path-link {
+  color: var(--muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.path-link .weakest {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline 2px;
+  text-underline-offset: 3px;
 }
 
 .error-page {

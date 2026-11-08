@@ -145,5 +145,7 @@
   "explainer_wins": "Vitórias",
   "explainer_losses": "Derrotas",
   "explainer_score": "Saldo",
-  "explainer_path_strength": "força {strength}"
+  "explainer_path_strength": "força {strength}",
+  "explainer_ranked_above": "Colocaram {winner} acima de {loser}",
+  "explainer_final_order": "Ordem final"
 }

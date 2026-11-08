@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { duels, lockSequence, type BallotGroup } from "#lib/explainers.ts";
+  import { duels, lockedOrder, lockSequence, type BallotGroup } from "#lib/explainers.ts";
   import { m } from "#lib/paraglide/messages.js";
+  import CandidateChip from "./CandidateChip.svelte";
   import CycleTriangle from "./CycleTriangle.svelte";
 
   let { ballots, caption }: { ballots: readonly BallotGroup[]; caption: string } = $props();
   const steps = $derived(lockSequence(ballots));
   const skipped = $derived(steps.find((step) => !step.locked)?.duel);
+  const order = $derived(lockedOrder(ballots));
 </script>
 
 <ol class="lock-steps">
@@ -18,4 +20,11 @@
     </li>
   {/each}
 </ol>
+<p class="chip-row final-order">
+  {m.explainer_final_order()}:
+  {#each order as letter, rank (letter)}
+    {#if rank > 0}<span aria-hidden="true">›</span>{/if}
+    <CandidateChip {letter} />
+  {/each}
+</p>
 <CycleTriangle duels={duels(ballots)} {skipped} {caption} />
