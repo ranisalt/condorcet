@@ -86,3 +86,20 @@ test("stacks method explanations at desktop and mobile widths", async ({ page })
     );
   }
 });
+
+test("draws the first-choice bars in proportion to the votes", async ({ page }) => {
+  await page.goto("/how-it-works");
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const bars = await page
+      .locator(".tally-bar")
+      .evaluateAll((spans) =>
+        spans.map((span) => [Number(span.textContent), span.getBoundingClientRect().width]),
+      );
+    expect(bars).toHaveLength(3);
+    const [[topVotes, topWidth]] = bars;
+    for (const [votes, barWidth] of bars) {
+      expect(barWidth).toBeCloseTo((topWidth * votes) / topVotes, 0);
+    }
+  }
+});

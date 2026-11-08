@@ -12,9 +12,11 @@
     {#each rows as letter (letter)}
       <li class="tally-row">
         <CandidateChip {letter} />
-        <span class="tally-bar cand-{letter}" style:width="{(tallies[letter] / max) * 100}%"
-          >{tallies[letter]}</span
-        >
+        <span class="tally-track">
+          <span class="tally-bar cand-{letter}" style:width="{(tallies[letter] / max) * 100}%"
+            >{tallies[letter]}</span
+          >
+        </span>
       </li>
     {/each}
   </ul>
