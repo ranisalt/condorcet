@@ -89,4 +89,10 @@ describe("enterStep", () => {
   it("admits a matching election id", async () => {
     expect(await outcome(submitted, "thanks", [election.id])).toBe("admitted");
   });
+
+  it("returns the admitted voter's stored ranking in order", async () => {
+    const locals = { voter: submitted } as App.Locals;
+    expect((await enterStep(locals, "ballot")).ranked).toEqual([1, 0]);
+    expect((await enterStep(locals, "thanks")).ranked).toEqual([1, 0]);
+  });
 });

@@ -2,7 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import { m } from "#lib/paraglide/messages.js";
 import { env } from "cloudflare:workers";
 import { checkElectionId, type Election } from "../election.ts";
-import { readParticipation } from "./ballots.ts";
+import { readOwnBallot } from "./ballots.ts";
 import { requireCurrentElection } from "./election.ts";
 import type { VoterId } from "./voter-session.ts";
 
@@ -12,6 +12,8 @@ export type JourneyStep = "acknowledgment" | "ballot" | "thanks";
 export type JourneyEntry = {
   election: Election;
   voterId: VoterId;
+  /** The voter's stored ranking, empty when none or blank. */
+  ranked: number[];
 };
 
 export type EntryError = "invalid" | "stale";
@@ -47,7 +49,7 @@ export async function enterStep(
     if (problem !== null) return { error: problem };
   }
 
-  const participation = await readParticipation(env.DB, election.id, locals.voter);
+  const { participation, ranked } = await readOwnBallot(env.DB, election.id, locals.voter);
   if (step === "acknowledgment") {
     if (participation !== null) redirect(303, "/ballot");
   } else {
@@ -55,5 +57,5 @@ export async function enterStep(
     if (step === "thanks" && participation.submittedAt === null) redirect(303, "/ballot");
   }
 
-  return { election, voterId: locals.voter };
+  return { election, voterId: locals.voter, ranked };
 }

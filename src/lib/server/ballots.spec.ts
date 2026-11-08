@@ -56,7 +56,9 @@ it("atomically replaces rankings, accepts empty submissions, rolls back errors, 
 
     await expect(
       replaceBallot(d1, "election-a", "never-acknowledged", [0], firstTime),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/FOREIGN KEY/);
+    expect(await readOwnRanking(d1, "election-a", "never-acknowledged")).toEqual([]);
+    expect(await readParticipation(d1, "election-a", "never-acknowledged")).toBeNull();
     expect(await readOwnRanking(d1, "election-a", "voter-b")).toEqual([94]);
     expect(await readOwnRanking(d1, "election-a", "voter-c")).toEqual([]);
     expect((await readParticipation(d1, "election-a", "voter-c"))?.submittedAt).toEqual(firstTime);

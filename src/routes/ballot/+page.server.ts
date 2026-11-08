@@ -1,7 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { env } from "cloudflare:workers";
 import { isElectionOpen, shuffle } from "#lib/election.ts";
-import { readOwnRanking } from "#lib/server/ballots.ts";
 import { submitBallotForm, type BallotSubmission } from "#lib/server/ballot-submission.ts";
 import { enterStep } from "#lib/server/participation.ts";
 import type { Actions, PageServerLoad } from "./$types";
@@ -13,9 +11,7 @@ function failure(result: Exclude<BallotSubmission, { electionId: string }>) {
 
 export const load = (async ({ locals }) => {
   if (locals.voter === undefined) return { signedIn: false as const };
-  const { election, voterId } = await enterStep(locals, "ballot");
-
-  const ranked = await readOwnRanking(env.DB, election.id, voterId);
+  const { election, ranked } = await enterStep(locals, "ballot");
   return {
     signedIn: true as const,
     election,

@@ -108,10 +108,14 @@ describe("submitBallotForm", () => {
   );
 
   it("returns the draft with a save error when storage fails", async () => {
+    // Reads still work, so the voter is admitted; every write fails.
     state.d1 = new Proxy(d1, {
       get: (target, key) =>
-        key === "batch"
-          ? () => Promise.reject(new Error("D1 unavailable"))
+        key === "prepare"
+          ? (query: string) => {
+              if (!/^\s*select/i.test(query)) throw new Error("D1 unavailable");
+              return target.prepare(query);
+            }
           : Reflect.get(target, key, target),
     });
     expect(await submit("save", { ranked: [87] })).toEqual({

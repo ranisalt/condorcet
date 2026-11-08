@@ -49,17 +49,38 @@ export async function readParticipation(
   return rows[0] ?? null;
 }
 
+function ownRankingQuery(db: ReturnType<typeof getDb>, electionId: string, voterId: string) {
+  return db
+    .select({ candidateId: ballotRank.candidateId })
+    .from(ballotRank)
+    .where(and(eq(ballotRank.electionId, electionId), eq(ballotRank.voterId, voterId)))
+    .orderBy(asc(ballotRank.position));
+}
+
 export async function readOwnRanking(
   d1: D1Database,
   electionId: string,
   voterId: string,
 ): Promise<number[]> {
-  const rows = await getDb(d1)
-    .select({ candidateId: ballotRank.candidateId })
-    .from(ballotRank)
-    .where(and(eq(ballotRank.electionId, electionId), eq(ballotRank.voterId, voterId)))
-    .orderBy(asc(ballotRank.position));
+  const rows = await ownRankingQuery(getDb(d1), electionId, voterId);
   return rows.map((row) => row.candidateId);
+}
+
+/** The voter's participation and stored ranking, read together in one D1 round trip. */
+export async function readOwnBallot(
+  d1: D1Database,
+  electionId: string,
+  voterId: string,
+): Promise<{ participation: Participation | null; ranked: number[] }> {
+  const db = getDb(d1);
+  const [participationRows, rankRows] = await db.batch([
+    participationQuery(db, electionId, voterId),
+    ownRankingQuery(db, electionId, voterId),
+  ]);
+  return {
+    participation: participationRows[0] ?? null,
+    ranked: rankRows.map((row) => row.candidateId),
+  };
 }
 
 export async function replaceBallot(
@@ -69,11 +90,9 @@ export async function replaceBallot(
   ranked: readonly number[],
   now: Date,
 ): Promise<void> {
+  // Callers admit the voter through enterStep first. The ballot_rank -> election_participant
+  // foreign key still rejects ranks for a voter who never acknowledged, failing the whole batch.
   const db = getDb(d1);
-  if ((await readParticipation(d1, electionId, voterId)) === null) {
-    throw new Error("Election acknowledgment is required before submitting a ballot");
-  }
-
   const updateSubmission = db
     .update(electionParticipant)
     .set({ submittedAt: sql`coalesce(${electionParticipant.submittedAt}, ${now.getTime()})` })
