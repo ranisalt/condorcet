@@ -1,15 +1,10 @@
 import { expect, it } from "vitest";
 import { validateElectionConfig, selectElection } from "./election.ts";
 import { isElectionOpen } from "../election.ts";
+import { TEST_ELECTION_ID, testCandidate } from "../../test/election.ts";
 
-const electionId = "8bc131c5-3228-46e4-b310-3555653d815d";
-const candidate = (id: number, number: string) => ({
-  id,
-  name: `Candidate ${id}`,
-  number,
-  party: "TEST",
-  vice: { name: `Vice ${id}`, party: "TEST" },
-});
+const electionId = TEST_ELECTION_ID;
+const candidate = testCandidate;
 const validElection: {
   id: string;
   titleKey: string;

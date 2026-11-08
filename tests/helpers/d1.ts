@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { access, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { getPlatformProxy } from "wrangler";
+import { readMigrations } from "../../src/test/migrations.ts";
 
 export const TEST_ORIGIN = "http://localhost:4173";
 export const TEST_SECRET = "condorcet-local-test-secret-32-characters";
@@ -10,7 +11,9 @@ const ROOT = process.cwd();
 
 const PERSIST_PATH = resolve(ROOT, ".wrangler/e2e/v3");
 const MARKER_PATH = resolve(ROOT, ".wrangler/e2e/.condorcet-test-database");
-const ELECTION_ID = "8bc131c5-3228-46e4-b310-3555653d815d";
+export const ELECTION_ID = "8bc131c5-3228-46e4-b310-3555653d815d";
+/** The configured roster order, which the ballot posts as `candidateOrderId`. */
+export const CANDIDATE_ORDER = [87, 94, 125, 97, 240, 130, 173, 141, 108, 224, 137, 202];
 const SEED_CANDIDATE_ID = 87;
 const SEED_LIMIT = 10_000;
 const INSERT_CHUNK_SIZE = 20;
@@ -85,24 +88,16 @@ async function applyMigrations(d1: D1Database): Promise<void> {
     .prepare(`CREATE TABLE IF NOT EXISTS ${MIGRATION_TABLE} (name TEXT PRIMARY KEY NOT NULL)`)
     .run();
 
-  const files = (await readdir(join(ROOT, "drizzle")))
-    .filter((name) => name.endsWith(".sql"))
-    .sort();
-  for (const file of files) {
+  for (const { name, statements } of await readMigrations(join(ROOT, "drizzle"))) {
     const alreadyApplied = await d1
       .prepare(`SELECT name FROM ${MIGRATION_TABLE} WHERE name = ?`)
-      .bind(file)
+      .bind(name)
       .first<{ name: string }>();
     if (alreadyApplied) continue;
 
-    const sql = await readFile(join(ROOT, "drizzle", file), "utf8");
-    const statements = sql
-      .split("--> statement-breakpoint")
-      .map((statement) => statement.trim())
-      .filter(Boolean);
     await d1.batch([
       ...statements.map((statement) => d1.prepare(statement)),
-      d1.prepare(`INSERT INTO ${MIGRATION_TABLE} (name) VALUES (?)`).bind(file),
+      d1.prepare(`INSERT INTO ${MIGRATION_TABLE} (name) VALUES (?)`).bind(name),
     ]);
   }
 }

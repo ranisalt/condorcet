@@ -1,6 +1,7 @@
 import type { Cookies } from "@sveltejs/kit";
 import { createHash, createHmac } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
+import { fakeCookies } from "../../test/cookies.ts";
 import { LoginError, beginLogin, completeLogin, supabaseIssuer, type OidcConfig } from "./oidc.ts";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
@@ -42,23 +43,6 @@ beforeAll(async () => {
     ])
   ).privateKey;
 });
-
-function fakeCookies() {
-  const jar = new Map<string, string>();
-  const cookies = {
-    get: (name: string) => jar.get(name),
-    getAll: () => [...jar].map(([name, value]) => ({ name, value })),
-    set: (name: string, value: string) => {
-      jar.set(name, value);
-    },
-    delete: (name: string) => {
-      jar.delete(name);
-    },
-    serialize: (name: string, value: string) => `${name}=${value}`,
-    parse: () => ({}),
-  } as unknown as Cookies;
-  return { cookies, jar };
-}
 
 function b64url(input: string | Buffer): string {
   return Buffer.from(input).toString("base64url");
@@ -255,128 +239,114 @@ describe("completeLogin", () => {
     );
   });
 
-  it("throws reason provider when the callback carries error=", async () => {
-    const { cookies } = fakeCookies();
-    const { state } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({ idToken: null });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state, { error: "access_denied" }), fetchFn, NOW),
+  const nowSeconds = Math.floor(NOW.getTime() / 1000);
+  it.each<[string, (nonce: string) => Promise<ProviderOptions>, Record<string, string>, string]>([
+    [
+      "the callback carries error=",
+      async () => ({ idToken: null }),
+      { error: "access_denied" },
       "provider",
-    );
-  });
-
-  it("throws reason token when the token endpoint answers 400", async () => {
-    const { cookies } = fakeCookies();
-    const { state } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({ idToken: null, tokenStatus: 400 });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the token endpoint answers 400",
+      async () => ({ idToken: null, tokenStatus: 400 }),
+      {},
       "token",
-    );
-  });
-
-  it("throws reason token when the ID token signature does not verify (signed by another key, same kid)", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const forged = await signJwt(validClaims(nonce), { key: otherKey });
-    const { fetchFn } = providerFetch({ idToken: forged });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the ID token signature does not verify (signed by another key, same kid)",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce), { key: otherKey }) }),
+      {},
       "token",
-    );
-  });
-
-  it("throws reason token when the payload was tampered after signing", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const [header, , signature] = (await signJwt(validClaims(nonce))).split(".");
-    const forgedPayload = b64url(JSON.stringify(validClaims(nonce, { sub: "someone-else" })));
-    const { fetchFn } = providerFetch({ idToken: `${header}.${forgedPayload}.${signature}` });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the payload was tampered after signing",
+      async (nonce) => {
+        const [header, , signature] = (await signJwt(validClaims(nonce))).split(".");
+        const forgedPayload = b64url(JSON.stringify(validClaims(nonce, { sub: "someone-else" })));
+        return { idToken: `${header}.${forgedPayload}.${signature}` };
+      },
+      {},
       "token",
-    );
-  });
-
-  it("throws reason token for alg none", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const unsigned = await signJwt(validClaims(nonce), { alg: "none" });
-    const { fetchFn } = providerFetch({ idToken: unsigned });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the ID token uses alg none",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce), { alg: "none" }) }),
+      {},
       "token",
-    );
-  });
-
-  it("throws reason token for HS256 even when HMAC-signed with the client secret", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const hs = await signJwt(validClaims(nonce), { alg: "HS256" });
-    const { fetchFn } = providerFetch({ idToken: hs });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the ID token is HS256, even when HMAC-signed with the client secret",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce), { alg: "HS256" }) }),
+      {},
       "token",
-    );
-  });
-
-  it("throws reason token when the kid is not in the JWKS", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({
-      idToken: await signJwt(validClaims(nonce), { kid: "rotated-away-kid" }),
-    });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the kid is not in the JWKS",
+      async (nonce) => ({
+        idToken: await signJwt(validClaims(nonce), { kid: "rotated-away-kid" }),
+      }),
+      {},
       "token",
-    );
-  });
-
-  it("throws reason provider when the JWKS endpoint answers an error status", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({
-      idToken: await signJwt(validClaims(nonce)),
-      jwksStatus: 500,
-    });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the JWKS endpoint answers an error status",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce)), jwksStatus: 500 }),
+      {},
       "provider",
-    );
-  });
-
-  it("throws reason provider when the JWKS fetch itself fails", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({
-      idToken: await signJwt(validClaims(nonce)),
-      jwksThrows: true,
-    });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the JWKS fetch itself fails",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce)), jwksThrows: true }),
+      {},
       "provider",
-    );
-  });
-
-  it("throws reason claims on an aud mismatch", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({
-      idToken: await signJwt(validClaims(nonce, { aud: "other-client" })),
-    });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
+    ],
+    [
+      "the aud does not match",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce, { aud: "other-client" })) }),
+      {},
       "claims",
+    ],
+    [
+      "the iss does not match",
+      async (nonce) => ({
+        idToken: await signJwt(validClaims(nonce, { iss: "https://evil.example" })),
+      }),
+      {},
+      "claims",
+    ],
+    [
+      "the ID token has expired",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce, { exp: nowSeconds - 1 })) }),
+      {},
+      "claims",
+    ],
+    [
+      "nbf is in the future",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce, { nbf: nowSeconds + 60 })) }),
+      {},
+      "claims",
+    ],
+    [
+      "iat is in the future",
+      async (nonce) => ({ idToken: await signJwt(validClaims(nonce, { iat: nowSeconds + 60 })) }),
+      {},
+      "claims",
+    ],
+    [
+      "the nonce does not match",
+      async () => ({ idToken: await signJwt(validClaims("replayed-nonce")) }),
+      {},
+      "nonce",
+    ],
+  ])("rejects a login when %s", async (_label, provider, extra, reason) => {
+    const { cookies } = fakeCookies();
+    const { state, nonce } = await startLogin(cookies);
+    const { fetchFn } = providerFetch(await provider(nonce));
+
+    await expectLoginError(
+      completeLogin(CONFIG, cookies, callbackUrl(state, extra), fetchFn, NOW),
+      reason,
     );
   });
 
@@ -392,48 +362,6 @@ describe("completeLogin", () => {
     );
   });
 
-  it("throws reason claims on an iss mismatch", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({
-      idToken: await signJwt(validClaims(nonce, { iss: "https://evil.example" })),
-    });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
-      "claims",
-    );
-  });
-
-  it("throws reason claims on an expired ID token", async () => {
-    const { cookies } = fakeCookies();
-    const { state, nonce } = await startLogin(cookies);
-    const expired = validClaims(nonce, { exp: Math.floor(NOW.getTime() / 1000) - 1 });
-    const { fetchFn } = providerFetch({ idToken: await signJwt(expired) });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
-      "claims",
-    );
-  });
-
-  for (const [label, claim] of [
-    ["nbf", "nbf"],
-    ["iat", "iat"],
-  ] as const) {
-    it(`throws reason claims when ${label} is in the future`, async () => {
-      const { cookies } = fakeCookies();
-      const { state, nonce } = await startLogin(cookies);
-      const future = validClaims(nonce, { [claim]: Math.floor(NOW.getTime() / 1000) + 60 });
-      const { fetchFn } = providerFetch({ idToken: await signJwt(future) });
-
-      await expectLoginError(
-        completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
-        "claims",
-      );
-    });
-  }
-
   it("accepts an nbf that has already passed", async () => {
     const { cookies } = fakeCookies();
     const { state, nonce } = await startLogin(cookies);
@@ -442,19 +370,6 @@ describe("completeLogin", () => {
 
     await expect(completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW)).resolves.toBe(
       "voter-opaque-1",
-    );
-  });
-
-  it("throws reason nonce on a nonce mismatch", async () => {
-    const { cookies } = fakeCookies();
-    const { state } = await startLogin(cookies);
-    const { fetchFn } = providerFetch({
-      idToken: await signJwt(validClaims("replayed-nonce")),
-    });
-
-    await expectLoginError(
-      completeLogin(CONFIG, cookies, callbackUrl(state), fetchFn, NOW),
-      "nonce",
     );
   });
 

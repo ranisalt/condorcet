@@ -1,24 +1,14 @@
 import { isHttpError, isRedirect } from "@sveltejs/kit";
 import type * as ServerElection from "./election.ts";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Election } from "#lib/election.ts";
 import { acknowledgeElection, replaceBallot } from "./ballots.ts";
 import type { VoterId } from "./voter-session.ts";
 import { openTestD1 } from "../../test/d1.ts";
+import { testElection } from "../../test/election.ts";
 
-const state = vi.hoisted(() => {
-  const value = { d1: null as D1Database | null, election: null as Election | null };
-  Reflect.set(globalThis, "__sveltekit_cloudflare_platform", {
-    get env() {
-      return {
-        get DB() {
-          if (value.d1 === null) throw new Error("Test D1 has not been initialized");
-          return value.d1;
-        },
-      };
-    },
-  });
-  return value;
+const state = await vi.hoisted(async () => {
+  const { installTestPlatform } = await import("../../test/platform.ts");
+  return installTestPlatform();
 });
 
 vi.mock("./election.ts", async (importOriginal) => {
@@ -28,16 +18,7 @@ vi.mock("./election.ts", async (importOriginal) => {
 
 import { enterStep, type JourneyStep } from "./participation.ts";
 
-const election: Election = {
-  id: "8bc131c5-3228-46e4-b310-3555653d815d",
-  titleKey: "election_br_2026_title",
-  closesAt: null,
-  sources: ["https://example.invalid/source"],
-  candidates: [
-    { id: 0, name: "A", number: "10", party: "P", vice: { name: "VA", party: "P" } },
-    { id: 1, name: "B", number: "20", party: "P", vice: { name: "VB", party: "P" } },
-  ],
-};
+const election = testElection([0, 1]);
 const NOW = new Date("2026-10-15T12:00:00.000Z");
 const fresh = "fresh-voter" as VoterId;
 const acknowledged = "acknowledged-voter" as VoterId;

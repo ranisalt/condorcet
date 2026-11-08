@@ -1,5 +1,5 @@
 import type * as OidcModule from "#lib/server/oidc.ts";
-import { isRedirect, type Cookies } from "@sveltejs/kit";
+import { isRedirect } from "@sveltejs/kit";
 import { SESSION_SECRET } from "$app/env/private";
 import { describe, expect, it, vi } from "vitest";
 import { readVoter, voterCookie, type VoterId } from "#lib/server/voter-session.ts";
@@ -14,19 +14,7 @@ vi.mock("#lib/server/oidc.ts", async (importOriginal) => {
 
 import { LoginError } from "#lib/server/oidc.ts";
 import { GET } from "./+server.ts";
-
-function fakeCookies() {
-  const jar = new Map<string, string>();
-  const cookies = {
-    get: (name: string) => jar.get(name),
-    getAll: () => [...jar].map(([name, value]) => ({ name, value })),
-    set: (name: string, value: string) => void jar.set(name, value),
-    delete: (name: string) => void jar.delete(name),
-    serialize: () => "",
-    parse: () => ({}),
-  } as unknown as Cookies;
-  return { cookies, jar };
-}
+import { fakeCookies } from "../../../test/cookies.ts";
 
 async function callback(origin: string) {
   const { cookies, jar } = fakeCookies();

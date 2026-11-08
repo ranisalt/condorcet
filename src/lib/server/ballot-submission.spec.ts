@@ -1,24 +1,15 @@
 import type * as ServerElection from "./election.ts";
 import { isRedirect } from "@sveltejs/kit";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Election } from "#lib/election.ts";
 import { acknowledgeElection, readOwnRanking, replaceBallot } from "./ballots.ts";
 import type { VoterId } from "./voter-session.ts";
 import { openTestD1 } from "../../test/d1.ts";
+import { testElection } from "../../test/election.ts";
+import { ballotForm, type BallotFormFields } from "../../test/platform.ts";
 
-const state = vi.hoisted(() => {
-  const value = { d1: null as D1Database | null, election: null as Election | null };
-  Reflect.set(globalThis, "__sveltekit_cloudflare_platform", {
-    get env() {
-      return {
-        get DB() {
-          if (value.d1 === null) throw new Error("Test D1 has not been initialized");
-          return value.d1;
-        },
-      };
-    },
-  });
-  return value;
+const state = await vi.hoisted(async () => {
+  const { installTestPlatform } = await import("../../test/platform.ts");
+  return installTestPlatform();
 });
 
 vi.mock("./election.ts", async (importOriginal) => {
@@ -28,45 +19,20 @@ vi.mock("./election.ts", async (importOriginal) => {
 
 import { submitBallotForm, type BallotSubmissionKind } from "./ballot-submission.ts";
 
-const election: Election = {
-  id: "8bc131c5-3228-46e4-b310-3555653d815d",
-  titleKey: "election_br_2026_title",
-  closesAt: "2026-10-15T12:00:00.000Z",
-  sources: ["https://example.invalid/source"],
-  candidates: [
-    { id: 87, name: "A", number: "87", party: "P", vice: { name: "VA", party: "P" } },
-    { id: 130, name: "B", number: "130", party: "P", vice: { name: "VB", party: "P" } },
-  ],
-};
+const election = testElection([87, 130], { closesAt: "2026-10-15T12:00:00.000Z" });
 const beforeClose = new Date("2026-10-15T11:59:59.999Z");
 const atClose = new Date("2026-10-15T12:00:00.000Z");
 const voter = "voter" as VoterId;
 const fresh = "fresh-voter" as VoterId;
 
-type FormFields = {
-  electionIds?: FormDataEntryValue[];
-  ranked?: readonly number[];
-  operations?: string[];
-};
-
-function makeForm({ electionIds = [election.id], ranked = [], operations = [] }: FormFields) {
-  const form = new FormData();
-  for (const id of electionIds) form.append("electionId", id);
-  for (const candidate of election.candidates)
-    form.append("candidateOrderId", String(candidate.id));
-  for (const id of ranked) form.append("candidateId", String(id));
-  for (const operation of operations) form.append("operation", operation);
-  return form;
-}
-
 async function submit(
   kind: BallotSubmissionKind,
-  fields: FormFields,
+  fields: BallotFormFields,
   now = beforeClose,
   locals: App.Locals = { voter },
 ) {
   try {
-    return await submitBallotForm(locals, makeForm(fields), kind, now);
+    return await submitBallotForm(locals, ballotForm(election, fields), kind, now);
   } catch (cause) {
     if (isRedirect(cause)) return { redirect: cause.location };
     throw cause;
@@ -118,7 +84,7 @@ describe("submitBallotForm", () => {
     expect(await readOwnRanking(d1, election.id, voter)).toEqual([130, 87]);
   });
 
-  it.each<[string, FormFields, string, number]>([
+  it.each<[string, BallotFormFields, string, number]>([
     [
       "a stale election id",
       { electionIds: ["6f1c1d0e-0000-4000-8000-000000000000"] },

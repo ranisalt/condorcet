@@ -1,28 +1,11 @@
-import type { Cookies } from "@sveltejs/kit";
 import { describe, expect, it } from "vitest";
 import { signedCookie } from "./signed-cookie.ts";
 import { clearVoter, readVoter, voterCookie, writeVoter, type VoterId } from "./voter-session.ts";
+import { fakeCookies } from "../../test/cookies.ts";
 
 const SECRET = "test-session-secret-with-enough-length";
 const NOW = new Date("2026-10-15T12:00:00.000Z");
 const VOTER = "voter-opaque-1" as VoterId;
-
-function fakeCookies() {
-  const jar = new Map<string, string>();
-  const cookies = {
-    get: (name: string) => jar.get(name),
-    getAll: () => [...jar].map(([name, value]) => ({ name, value })),
-    set: (name: string, value: string) => {
-      jar.set(name, value);
-    },
-    delete: (name: string) => {
-      jar.delete(name);
-    },
-    serialize: (name: string, value: string) => `${name}=${value}`,
-    parse: () => ({}),
-  } as unknown as Cookies;
-  return { cookies, jar };
-}
 
 async function issuedValue(now: Date = NOW): Promise<{ name: string; value: string }> {
   const { cookies, jar } = fakeCookies();

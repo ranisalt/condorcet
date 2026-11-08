@@ -1,39 +1,37 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow, openAcknowledgedBallot } from "./helpers/ballot.ts";
 import { resetFixture } from "./helpers/d1.ts";
-import { signInFixture } from "./helpers/session.ts";
-
-async function openAcknowledgedBallot(page: Page, context: BrowserContext) {
-  await signInFixture(context, "test-voter");
-  await page.goto("/acknowledgment");
-  await page.getByRole("checkbox", { name: /Li e compreendi os avisos/ }).check();
-  await page.getByRole("button", { name: "Concordar e abrir a cédula" }).click();
-  await expect(page).toHaveURL(/\/ballot$/);
-}
 
 test.beforeEach(async () => {
   await resetFixture({ validCount: 0, blankCount: 0 });
 });
 
-test("fills the submit bar with text without shrinking its button", async ({ page, context }) => {
+test("shows the submit text beside a fully legible button at every width", async ({
+  page,
+  context,
+}) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openAcknowledgedBallot(page, context);
   const button = page.getByRole("button", { name: "Enviar meu voto", exact: true });
   const text = page.getByRole("paragraph").filter({ hasText: /Somente o envio confirma/ });
-  await expect(button).toHaveCSS("flex-shrink", "0");
-  const textBox = await text.boundingBox();
-  const buttonBox = await button.boundingBox();
-  expect(textBox).not.toBeNull();
-  expect(buttonBox).not.toBeNull();
-  if (textBox && buttonBox) {
-    expect(textBox.width).toBeGreaterThan(608);
-    expect(buttonBox.x - (textBox.x + textBox.width)).toBeCloseTo(24, 0);
-  }
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await expect(button).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+    await expect(text).toBeVisible();
+    // A squeezed button wraps or clips its label; the text must not run under it either.
+    expect(await button.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
       true,
     );
+    const textBox = await text.boundingBox();
+    const buttonBox = await button.boundingBox();
+    if (!textBox || !buttonBox) throw new Error("Expected the submit bar to be laid out");
+    const overlaps =
+      textBox.x < buttonBox.x + buttonBox.width &&
+      buttonBox.x < textBox.x + textBox.width &&
+      textBox.y < buttonBox.y + buttonBox.height &&
+      buttonBox.y < textBox.y + textBox.height;
+    expect(overlaps).toBe(false);
+    await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: test.info().outputPath(`ballot-${width}.png`), fullPage: true });
   }
 });
@@ -76,9 +74,5 @@ test("edits ticket ranks locally, preserves vice details, and leaves storage unc
     page.getByRole("list", { name: "Sua ordem de preferência" }).getByRole("listitem"),
   ).toHaveCount(1);
   await page.setViewportSize({ width: 390, height: 844 });
-  const dimensions = await page.evaluate(() => ({
-    documentWidth: document.documentElement.scrollWidth,
-    viewportWidth: document.documentElement.clientWidth,
-  }));
-  expect(dimensions.documentWidth).toBeLessThanOrEqual(dimensions.viewportWidth);
+  await expectNoHorizontalOverflow(page);
 });

@@ -1,21 +1,9 @@
 import { expect, it } from "vitest";
 import { editDraft, parseDraft, parseDraftEdit, parseRankedIds, shuffle } from "./election.ts";
-import type { Candidate, Election } from "./election.ts";
+import { testElection } from "../test/election.ts";
 
-const candidates: Candidate[] = [0, 87, 130].map((id) => ({
-  id,
-  name: `Candidate ${id}`,
-  number: String(id),
-  party: "TEST",
-  vice: { name: `Vice ${id}`, party: "TEST" },
-}));
-const election: Election = {
-  id: "8bc131c5-3228-46e4-b310-3555653d815d",
-  titleKey: "election_br_2026_title",
-  closesAt: null,
-  sources: [],
-  candidates,
-};
+const election = testElection([0, 87, 130], { sources: [] });
+const { candidates } = election;
 
 it("accepts empty rankings and candidate zero without coercing malformed IDs", () => {
   expect(parseRankedIds([], candidates)).toEqual([]);

@@ -1,5 +1,5 @@
-import { readFile, readdir } from "node:fs/promises";
 import { getPlatformProxy } from "wrangler";
+import { readMigrations } from "./migrations.ts";
 
 export async function openTestD1() {
   const proxy = await getPlatformProxy<Env>({
@@ -10,15 +10,7 @@ export async function openTestD1() {
   });
 
   try {
-    const files = (await readdir("drizzle")).filter((name) => name.endsWith(".sql")).sort();
-
-    for (const file of files) {
-      const sql = await readFile(`drizzle/${file}`, "utf8");
-      const statements = sql
-        .split("--> statement-breakpoint")
-        .map((statement) => statement.trim())
-        .filter(Boolean);
-
+    for (const { statements } of await readMigrations()) {
       for (const statement of statements) {
         await proxy.env.DB.prepare(statement).run();
       }

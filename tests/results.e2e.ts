@@ -1,8 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { openE2ED1, resetFixture } from "./helpers/d1.ts";
+import { acknowledge, countSubmitted, expectNoHorizontalOverflow } from "./helpers/ballot.ts";
+import { ELECTION_ID, resetFixture, TEST_ORIGIN } from "./helpers/d1.ts";
 import { signInFixture } from "./helpers/session.ts";
-
-const electionId = "8bc131c5-3228-46e4-b310-3555653d815d";
 
 test("reveals results only at the valid-ballot threshold and relocks after withdrawal", async ({
   page,
@@ -30,22 +29,18 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   expect(lockedPayload).not.toContain("Lula");
 
   await signInFixture(context, "test-voter");
-  await page.goto("/acknowledgment");
-  await page.getByRole("checkbox", { name: /Li e compreendi os avisos/ }).check();
-  await page.getByRole("button", { name: "Concordar e abrir a cédula" }).click();
+  await acknowledge(page);
   await page.getByRole("button", { name: "Enviar meu voto" }).click();
-  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${electionId}`));
+  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${ELECTION_ID}`));
   await page.goto("/results");
   await expect(page.getByText("Votos válidos: 9.999")).toBeVisible();
   await expect(page.getByText(/Ainda não há votos válidos suficientes/)).toBeVisible();
 
   await signInFixture(context, "test-other");
-  await page.goto("/acknowledgment");
-  await page.getByRole("checkbox", { name: /Li e compreendi os avisos/ }).check();
-  await page.getByRole("button", { name: "Concordar e abrir a cédula" }).click();
+  await acknowledge(page);
   await page.getByRole("button", { name: "Adicionar Escritor Augusto Cury" }).click();
   await page.getByRole("button", { name: "Enviar meu voto" }).click();
-  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${electionId}`));
+  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${ELECTION_ID}`));
 
   await signInFixture(context, "test-voter");
   await page.goto("/results");
@@ -64,9 +59,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
+  await expectNoHorizontalOverflow(page);
   const matrixRegion = page.locator("[data-matrix-scroll]");
   await expect(matrixRegion).toHaveAttribute("tabindex", "0");
   expect(await matrixRegion.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(
@@ -77,13 +70,13 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   try {
     await signInFixture(nativeContext, "test-voter");
     const nativePage = await nativeContext.newPage();
-    await nativePage.goto("http://localhost:4173/results?method=schulze");
+    await nativePage.goto(`${TEST_ORIGIN}/results?method=schulze`);
     await expect(
       nativePage.getByRole("link", { name: "Schulze / Beatpath", exact: true }),
     ).toHaveAttribute("aria-current", "page");
     await nativePage.getByRole("link", { name: "Tideman", exact: true }).click();
     await expect(nativePage.getByRole("region", { name: "Resultado por Tideman" })).toBeVisible();
-    await nativePage.goto("http://localhost:4173/results?method=invalid");
+    await nativePage.goto(`${TEST_ORIGIN}/results?method=invalid`);
     await expect(nativePage.getByRole("link", { name: "Copeland", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
@@ -96,7 +89,7 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   await page.goto("/ballot");
   await page.getByRole("button", { name: "Remover Escritor Augusto Cury" }).click();
   await page.getByRole("button", { name: "Enviar meu voto" }).click();
-  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${electionId}`));
+  await expect(page).toHaveURL(new RegExp(`/thanks\\?electionId=${ELECTION_ID}`));
 
   await signInFixture(context, "test-voter");
   await page.goto("/results");
@@ -108,16 +101,5 @@ test("reveals results only at the valid-ballot threshold and relocks after withd
   expect(relockedPayload).not.toContain('"blankCount"');
   expect(relockedPayload).not.toContain('"methods"');
 
-  const database = await openE2ED1();
-  try {
-    const valid = await database.d1
-      .prepare(
-        "SELECT count(*) AS count FROM election_participant p WHERE p.election_id = ? AND p.submitted_at IS NOT NULL AND EXISTS (SELECT 1 FROM ballot_rank r WHERE r.election_id = p.election_id AND r.voter_id = p.voter_id)",
-      )
-      .bind(electionId)
-      .first<{ count: number }>();
-    expect(valid?.count).toBe(9999);
-  } finally {
-    await database.dispose();
-  }
+  expect(await countSubmitted("valid")).toBe(9999);
 });

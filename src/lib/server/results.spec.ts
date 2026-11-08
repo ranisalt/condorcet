@@ -1,40 +1,12 @@
 import type { VoterId } from "./voter-session.ts";
 import { expect, it } from "vitest";
-import type { Election } from "../election.ts";
 import { acknowledgeElection, readElectionCounts, replaceBallot } from "./ballots.ts";
 import { openTestD1 } from "../../test/d1.ts";
+import { testElection } from "../../test/election.ts";
 import { readResults } from "./results.ts";
 
 const at = new Date("2026-10-15T12:00:00.000Z");
-const election: Election = {
-  id: "8bc131c5-3228-46e4-b310-3555653d815d",
-  titleKey: "election_br_2026_title",
-  closesAt: null,
-  sources: ["https://example.invalid/source"],
-  candidates: [
-    {
-      id: 0,
-      name: "Candidate 0",
-      number: "10",
-      party: "TEST",
-      vice: { name: "Vice 0", party: "TEST" },
-    },
-    {
-      id: 87,
-      name: "Candidate 87",
-      number: "20",
-      party: "TEST",
-      vice: { name: "Vice 87", party: "TEST" },
-    },
-    {
-      id: 130,
-      name: "Candidate 130",
-      number: "30",
-      party: "TEST",
-      vice: { name: "Vice 130", party: "TEST" },
-    },
-  ],
-};
+const election = testElection([0, 87, 130]);
 
 async function acknowledge(d1: D1Database, voterId: string) {
   await acknowledgeElection(d1, election.id, voterId, at);
@@ -97,12 +69,6 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
       threshold: 2,
       reason: "not-submitted",
     });
-    for (const locked of [neverSubmitted, acknowledgmentOnly]) {
-      expect(Object.keys(locked)).not.toContain("methods");
-      expect(Object.keys(locked)).not.toContain("matrix");
-      expect(Object.keys(locked)).not.toContain("winnerId");
-      expect(Object.keys(locked)).not.toContain("blankCount");
-    }
 
     const available = await readResults(d1, election, "blank" as VoterId, 2);
     expect(available.state).toBe("available");
@@ -123,10 +89,6 @@ it("only exposes aggregates to submitted voters while the nonempty threshold hol
     await replaceBallot(d1, election.id, "valid-b", [], new Date("2026-10-16T12:00:00.000Z"));
     const relocked = await readResults(d1, election, "blank" as VoterId, 2);
     expect(relocked).toEqual({ state: "locked", validCount: 1, threshold: 2, reason: "threshold" });
-    expect(Object.keys(relocked)).not.toContain("matrix");
-    expect(Object.keys(relocked)).not.toContain("methods");
-    expect(Object.keys(relocked)).not.toContain("winnerId");
-    expect(Object.keys(relocked)).not.toContain("blankCount");
 
     await replaceBallot(d1, election.id, "valid-c", [130], new Date("2026-10-17T12:00:00.000Z"));
     const unlockedAgain = await readResults(d1, election, "blank" as VoterId, 2);
@@ -193,16 +155,12 @@ it("handles complete rankings, sparse ballots, and Condorcet cycles", async () =
       await replaceBallot(d1, cycleElection.id, ballot.voterId, ballot.ranking, at);
     }
     expect(await readResults(d1, cycleElection, "cycle-a" as VoterId, 2)).toMatchObject({
+      state: "available",
       matrix: {
         0: { 0: 0, 87: 2, 130: 1 },
         87: { 0: 1, 87: 0, 130: 2 },
         130: { 0: 2, 87: 1, 130: 0 },
       },
-      winnerId: null,
-    });
-    const cycleResult = await readResults(d1, cycleElection, "cycle-a" as VoterId, 2);
-    expect(cycleResult).toMatchObject({
-      state: "available",
       winnerId: null,
       methods: {
         copeland: { winnerIds: [0, 87, 130], unresolved: false },
